@@ -1,0 +1,7 @@
+# Reference doc snapshot — large (~71MB, 1139 files); provenance recorded in docs/plans.
+# Not vendored: the D10 refresh procedure re-fetches it rather than tracking it in git.
+.tmp/
+
+# macOS
+.DS_Store
+**/.DS_Store
