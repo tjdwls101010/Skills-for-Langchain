@@ -38,12 +38,21 @@ Distilled volume estimate: **~18–30k tokens**, Deep-Agents-dominated (~15–20
 
 Full evidence: `research/probe-results.md`. 26 blind tasks → doc-armed grading. **7 exclude** (create_agent, custom middleware, structured output, ToolRuntime, context API, LangGraph runtime context, functional API — Claude already correct), **19 include** (all 14 DeepAgents + A4, A7, B2, B3, B5). **Dominant cross-cutting gotcha:** `create_deep_agent(instructions=)` → `system_prompt=` (wrong in ~every DeepAgents task) — belongs in SKILL.md body. Plus: model IDs in docs are real/future (don't "correct"); pass `model=` explicitly.
 
-## Open decisions (resolve after round-2 probe)
+| D13 | Skill file structure | **SKILL.md + 2 references** (`references/deepagents.md`, `references/langchain-langgraph.md`) | DeepAgents topics interrelate (one build task spans several) → keep together, cleanest routing. LC/LG deltas are thin (9 items) → one co-located file. Sub-split only if a file proves unwieldy at implementation time. |
+| D14 | Plan format | **Multiple focused English docs in `docs/plans/`, authored directly (no subagents), no mid-sentence line wrapping** | User instruction. Overrides the ultracode "use workflows" default for the plan-writing step specifically. |
 
-- Round-2 include list (pending round-2 completion).
-- Skill file structure: SKILL.md + `references/` layout, and whether DeepAgents is one file or sub-split. Evidence leans: SKILL.md (mental model + cross-cutting gotchas + routing) + `references/deepagents.md` (bulk) + `references/langchain-langgraph.md` (thin deltas). Finalize post-round-2.
-- Frontmatter: `description` (trigger wording + near-misses), `user-invocable: false` (background knowledge, not a command), `disable-model-invocation` (likely no).
-- Validation scenarios (I5) — the before/after probe is the spine; any additions?
+## Probe result (axis 2, round 2) — recorded
+
+Full evidence appended to `research/probe-results.md`. 12 targeted tasks → 5 exclude, 7 include. Confirmed the LangChain built-in-middleware catalog is mostly already-known (PII, ContextEditing, ToolSelector correct); only `ModelFallbackMiddleware`, `ToolCallLimitMiddleware`, `ProviderToolSearchMiddleware` survive. LangGraph `durability=` + Postgres persistence already-known; only `DeltaChannel` survives. All 3 DeepAgents micro-features (rubric, dynamic subagents, interpreters) are gaps.
+
+## Final include list (measured)
+
+Cross-cutting (SKILL.md body): `system_prompt=` not `instructions=`; model IDs are real/future; explicit `model=`; `create_agent` baseline.
+LangChain (5): A4, A7, R3, R4, R6. LangGraph (4): B5, B3, B2, R8. DeepAgents (16): C1–C14, R10, R11, R12.
+
+## Open decisions — all resolved
+
+Interview complete. Remaining work this session is authoring the plan docs (01–06) and committing. Frontmatter specifics (`description`, `user-invocable: false`, etc.) and validation scenarios are specified inside the plan docs, not left open.
 
 ## Method note
 

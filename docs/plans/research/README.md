@@ -11,4 +11,5 @@ Evidence gathered during the planning session that grounds the plan in `../`. Th
 ## Files
 
 - `novelty-catalog.md` — axis-1 evidence: a doc-side survey classifying every significant topic as NOVEL / CHANGED / KNOWN, with the specific API deltas and a ranked "top gotchas" list.
-- `probe-results.md` — axis-2 evidence: the blind knowledge probe (added once the probe workflow completes) — what Claude actually got wrong when measured, per task, with verdicts.
+- `probe-results.md` — axis-2 evidence: the blind knowledge probe — what Claude actually got wrong when measured, per task, with verdicts, plus the consolidated final include list.
+- `probe-round1-tasks.json` / `probe-round2-tasks.json` — the raw per-task probe records (verdict, current API, key deltas, what the model did) for all 38 tasks, kept for auditability and as the "before" baseline the implementation session compares against.

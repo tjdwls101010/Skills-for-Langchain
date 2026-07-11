@@ -65,3 +65,35 @@ The probe is solid for DeepAgents (14 tasks) but **thin where it matters for Lan
 - **DeepAgents micro-features:** `RubricMiddleware` (LLM-as-judge), dynamic subagents (the "workflow" trigger word), the QuickJS interpreter path — touched but not isolated.
 
 → A targeted **round-2 mini-probe** on these would convert guesses into measurements before finalizing the include list.
+
+## Round 2 — coverage-gap closure (12 tasks)
+
+Verdicts: **5 correct (exclude), 7 include** (2 outdated_confident, 4 partial, 1 unknown). Key lesson: the LangChain built-in-middleware catalog is **mostly already known** — no full catalog needed, only the specific misses.
+
+**EXCLUDE (Claude already knows):**
+- R1 `PIIMiddleware` — correct (class, params, strategies, `apply_to_*` all right).
+- R2 `ContextEditingMiddleware`/`ClearToolUsesEdit` — correct verbatim.
+- R5 `LLMToolSelectorMiddleware` — correct (`model`, `max_tools`, `always_include`).
+- R7 LangGraph `durability=` (`"exit"/"async"/"sync"`, default async) — correct, even named the old `checkpoint_during`.
+- R9 Postgres persistence + `EncryptedSerializer.from_pycryptodome_aes()` — correct verbatim.
+
+**INCLUDE (the genuine misses):**
+- **R3 — `ModelFallbackMiddleware` (high, outdated_confident).** Claude used `model.with_fallbacks()` + `create_react_agent`. Current: built-in `ModelFallbackMiddleware(first, *rest)` via `middleware=[...]`.
+- **R4 — `ToolCallLimitMiddleware` (medium).** `ModelCallLimitMiddleware` Claude knows. Tool limiter's `exit_behavior` defaults to `"continue"` (3 values: continue/error/end); `"end"` only works single-tool.
+- **R6 — `ProviderToolSearchMiddleware` (high, unknown).** Claude hand-rolled raw `ChatAnthropic(betas=[...])`. Current: `ProviderToolSearchMiddleware(searchable_tools=[...])` + `@tool(extras={"defer_loading": True})`; provider-gated.
+- **R8 — `DeltaChannel` (high).** Claude offloaded the list to the Store (abandoning the reducer). Current: `Annotated[list, DeltaChannel(bulk_reducer, snapshot_frequency=K)]` from `langgraph.channels` (`>=1.2`, beta); bulk reducer must be associative+pure.
+- **R10 — `RubricMiddleware` (high, outdated_confident).** Claude claimed "deepagents has no judge-loop primitive" (false) and hand-rolled one. Current: `RubricMiddleware(model=, max_iterations=3, ...)` via `middleware=[...]`; trigger by passing `rubric` on invoke state; fixed verdict enum.
+- **R11 — dynamic subagents (high).** Claude emitted N parallel `task` calls. Current: interpreter-based — `CodeInterpreterMiddleware` exposes a `task()` global called from JS `eval` code; the literal word **"workflow"** triggers it.
+- **R12 — interpreters / PTC (high).** Claude invented `CodeExecutionMiddleware(sandbox=False)` running Python. Current: `CodeInterpreterMiddleware(ptc=[tools])` — QuickJS (JavaScript, not Python), `eval` tool, `deepagents[quickjs]`; distinct from sandbox backends.
+
+## Consolidated final include list
+
+**Cross-cutting → SKILL.md body:** `system_prompt=` not `instructions=` (deepagents); model IDs are real/future (don't "correct"); pass `model=` explicitly as `provider:model`; `create_agent` is the agent baseline (not `create_react_agent`/`AgentExecutor`).
+
+**LangChain deltas (5):** A4 SummarizationMiddleware params · A7 supervisor→agent-as-tool · R3 ModelFallbackMiddleware · R4 ToolCallLimitMiddleware · R6 ProviderToolSearchMiddleware.
+
+**LangGraph deltas (4):** B5 event streaming (stream_events v3) · B3 declarative error handling · B2 interrupts (thin) · R8 DeltaChannel.
+
+**DeepAgents (16) — the bulk:** C1/C2 core+built-ins · C3 backend security · C4 long-term memory · C5 subagents · C6 async subagents · C7 context engineering · C8 skills · C9 HITL · C10 permissions · C11 harness profiles · C12 sandboxes · C13 production · C14 MCP · R10 rubric · R11 dynamic subagents · R12 interpreters/PTC.
+
+**Excluded (verified current, April-2026):** create_agent basics, custom middleware, structured output, ToolRuntime, context API, PII/ContextEditing/ToolSelector middleware, LangGraph runtime-context, functional API, durability=, Postgres persistence.

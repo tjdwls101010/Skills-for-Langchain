@@ -1,0 +1,212 @@
+[
+ {
+  "id": "R1",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "from langchain.agents import create_agent; from langchain.agents.middleware import PIIMiddleware. PIIMiddleware(pii_type, strategy=\"redact\"|\"mask\"|\"block\"|\"hash\", detector=None, apply_to_input=True, apply_to_output=False, apply_to_tool_results=False). Built-in pii_type values: email, credit_card, ip, mac_address, url (custom types via detector= regex/callable). One instance per PII type, passed in create_agent(model=..., tools=..., middleware=[...]). redact\u2192[REDACTED_{TYPE}], mask\u2192partial (****-****-****-1234), block\u2192raises, hash\u2192deterministic hash. Note: apply_to_output=True additionally redacts streamed wire output and requires langchain>=1.3.2.",
+  "key_deltas": [
+   "No correction needed: model's API (class name, module path, positional pii_type, strategy set, built-in type list, apply_to_* params and defaults) all match current docs exactly",
+   "Minor nuance the model omitted (not an error): apply_to_output=True requires langchain>=1.3.2 and also scrubs streamed wire output (text deltas, tool-call args, tool outputs, state snapshots)"
+  ],
+  "what_model_did": "Used langchain.agents.middleware.PIIMiddleware with one instance per PII type (email\u2192redact, credit_card\u2192mask), wired into create_agent via middleware=[...], with apply_to_input/apply_to_output/apply_to_tool_results flags.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R2",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "Python: `from langchain.agents import create_agent` and `from langchain.agents.middleware import ContextEditingMiddleware, ClearToolUsesEdit`. Configure `ContextEditingMiddleware(edits=[ClearToolUsesEdit(trigger=100000, keep=3, clear_at_least=0, clear_tool_inputs=False, exclude_tools=(), placeholder=\"[cleared]\")])` and pass via `create_agent(model=..., tools=..., middleware=[...])`. Defaults: trigger=100000, keep=3, clear_at_least=0, clear_tool_inputs=False, exclude_tools=(), placeholder=\"[cleared]\"; bare `ContextEditingMiddleware()` defaults edits to `[ClearToolUsesEdit()]`. (JS differs: `contextEditingMiddleware({edits:[new ClearToolUsesEdit({triggerTokens, keep, clearToolInputs, excludeTools})]})`.)",
+  "key_deltas": [
+   "None \u2014 the model's Python code matches the current docs exactly (class names, edits=[...] structure, and all param names/defaults: trigger, keep, clear_at_least, clear_tool_inputs, exclude_tools, placeholder).",
+   "Minor (not a defect): JS naming differs \u2014 triggerTokens/clearToolInputs/excludeTools and `new ClearToolUsesEdit({...})` \u2014 but the task was answered in Python where `trigger` is correct."
+  ],
+  "what_model_did": "Used ContextEditingMiddleware with a ClearToolUsesEdit strategy (trigger/keep/clear_at_least/clear_tool_inputs/exclude_tools) wired into create_agent via middleware=[...], from memory.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R3",
+  "fw": "LangChain",
+  "verdict": "outdated_confident",
+  "value": "high",
+  "include": true,
+  "current_api": "The current built-in mechanism is `ModelFallbackMiddleware`, added via the agent's `middleware=` kwarg \u2014 not runnable `.with_fallbacks()`. Concretely (Python): `from langchain.agents import create_agent` and `from langchain.agents.middleware import ModelFallbackMiddleware`, then `agent = create_agent(model=\"anthropic:claude-sonnet-4-6\", tools=[], middleware=[ModelFallbackMiddleware(\"openai:gpt-5.5\", \"openai:gpt-5.4-mini\")])`. Signature is `ModelFallbackMiddleware(first_model, *additional_models)` where each fallback is a `provider:model` id string OR a `BaseChatModel` instance, tried in order when the primary call fails. JS: `import { createAgent, modelFallbackMiddleware } from \"langchain\"` and `modelFallbackMiddleware(\"first-fallback\", \"second-fallback\")`. The agent constructor is `create_agent`; the docs never mention `create_react_agent`.",
+  "key_deltas": [
+   "Model fallback for an agent is a built-in middleware `ModelFallbackMiddleware` (langchain.agents.middleware) passed through `middleware=[...]`, NOT `primary.with_fallbacks([secondary])` on the model runnable \u2014 the model wrongly named `.with_fallbacks()` as the current built-in mechanism.",
+   "Agent constructor is `create_agent` from `langchain.agents`, not `create_react_agent` (which the docs never reference and which is the deprecated/removed prebuilt).",
+   "`ModelFallbackMiddleware(first_model, *additional_models)`: each argument is a `provider:model` string (e.g. `\"openai:gpt-5.4-mini\"`) or a `BaseChatModel`, tried in order; there is no `exceptions_to_handle` param \u2014 that belonged to the old `.with_fallbacks()`.",
+   "JS equivalent is the `modelFallbackMiddleware(...)` factory imported from `\"langchain\"` (camelCase), variadic fallback strings.",
+   "Model IDs in current docs are future/fictional (e.g. `claude-sonnet-4-6`, `gpt-5.5`); don't 'correct' them, and prefer `provider:model` strings resolved via init_chat_model."
+  ],
+  "what_model_did": "Wrapped the primary chat model in `primary.with_fallbacks([secondary])` and passed the resulting runnable to `create_react_agent` from `langchain.agents`, presenting `.with_fallbacks()` as \"the core, current built-in mechanism.\"",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R4",
+  "fw": "LangChain",
+  "verdict": "partial",
+  "value": "medium",
+  "include": true,
+  "current_api": "from langchain.agents import create_agent; from langchain.agents.middleware import ModelCallLimitMiddleware, ToolCallLimitMiddleware. ModelCallLimitMiddleware(thread_limit=..., run_limit=..., exit_behavior=\"end\"|\"error\") \u2014 default \"end\" (graceful) vs \"error\" (raise); thread limiting requires a checkpointer. ToolCallLimitMiddleware(tool_name=None, thread_limit=..., run_limit=..., exit_behavior=\"continue\"|\"error\"|\"end\") \u2014 at least one of thread_limit/run_limit required; default exit_behavior is \"continue\" (block exceeded calls with error messages, model keeps going), \"error\" raises ToolCallLimitExceededError, \"end\" stops with ToolMessage+AIMessage but ONLY works for a single-tool limiter (raises NotImplementedError if other tools have pending calls). Pass via create_agent(model=..., tools=..., middleware=[...]); invoke with {\"messages\":[...]}.",
+  "key_deltas": [
+   "ToolCallLimitMiddleware.exit_behavior defaults to 'continue' (block exceeded tool calls with error messages, let the model continue) \u2014 NOT 'end'; the model omitted 'continue' entirely",
+   "ToolCallLimitMiddleware.exit_behavior has THREE values ('continue'|'error'|'end'), not the two ('end'|'error') the model assumed by analogy to ModelCallLimitMiddleware",
+   "ToolCallLimitMiddleware exit_behavior='end' only works when limiting a single tool (tool_name set); on a global/multi-tool limiter it raises NotImplementedError if other tools have pending calls \u2014 the model applied 'end' to a global limiter",
+   "'error' on ToolCallLimitMiddleware raises specifically ToolCallLimitExceededError",
+   "ToolCallLimitMiddleware requires at least one of thread_limit/run_limit; ModelCallLimitMiddleware exit_behavior default is 'end' (this part the model got right)",
+   "thread_limit (both middlewares) requires a checkpointer to persist across runs; the model set thread_limit without one"
+  ],
+  "what_model_did": "Used create_agent with ModelCallLimitMiddleware and ToolCallLimitMiddleware from langchain.agents.middleware, setting run_limit/thread_limit/exit_behavior on both \u2014 correct for the model-call limiter, but with wrong exit_behavior semantics for the tool-call limiter.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R5",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "from langchain.agents import create_agent; from langchain.agents.middleware import LLMToolSelectorMiddleware. Construct LLMToolSelectorMiddleware(model=\"<selector model, defaults to agent's main model>\", max_tools=N, always_include=[...], system_prompt=\"...\"). Only model, max_tools, always_include, and system_prompt are accepted; max_tools caps how many selected tools reach the main model and always_include names tools exempt from the cap. Wire via create_agent(model=..., tools=[...100 tools...], middleware=[LLMToolSelectorMiddleware(...)]) and run agent.invoke({\"messages\": [...]}). (Docs use fictional model IDs like gpt-5.5/gpt-5.4-mini, but any valid provider:model string works.)",
+  "key_deltas": [
+   "No correction needed: import path (langchain.agents.middleware), class name (LLMToolSelectorMiddleware), and both used kwargs (model, max_tools) all match the current docs exactly.",
+   "Confirmations of the model's hedges (not deltas): the cap is max_tools NOT limit; always_include and system_prompt are both real, valid parameters; model defaults to the agent's main model if omitted."
+  ],
+  "what_model_did": "Used create_agent from langchain.agents plus the built-in LLMToolSelectorMiddleware from langchain.agents.middleware, configured with model= and max_tools=, to dynamically narrow the tool set per turn.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R6",
+  "fw": "LangChain",
+  "verdict": "unknown",
+  "value": "high",
+  "include": true,
+  "current_api": "Use ProviderToolSearchMiddleware on create_agent: `from langchain.agents.middleware import ProviderToolSearchMiddleware`; `create_agent(model=\"anthropic:claude-opus-4-8\", tools=[get_weather, lookup_order], middleware=[ProviderToolSearchMiddleware(searchable_tools=[\"lookup_order\"])])`. Tools are deferred by listing them (by name or instance) in `searchable_tools`, or by marking them at construction with `@tool(extras={\"defer_loading\": True})` (JS: `extras: { defer_loading: true }`); with pre-marked tools, `searchable_tools` can be omitted. The middleware internally wires the provider's server-side tool search \u2014 no manual beta header, server-tool type string, or ChatAnthropic instance needed; pass the model as a `provider:model` string. Provider-gated: Anthropic Claude Sonnet 4+/Opus 4+/Haiku 4.5+ or OpenAI gpt-5.5+, else raises ValueError. JS: `providerToolSearchMiddleware({ searchableTools: [...] })` from \"langchain\".",
+  "key_deltas": [
+   "Deferral is done via ProviderToolSearchMiddleware (from langchain.agents.middleware) passed to create_agent(middleware=[...]), NOT by hand-constructing a provider server-tool dict or setting ChatAnthropic(betas=[...])",
+   "Per-tool opt-in is @tool(extras={\"defer_loading\": True}) at construction (JS: extras.defer_loading=true), NOT tool.metadata[\"defer_loading\"]=True",
+   "Which tools defer is controlled by ProviderToolSearchMiddleware(searchable_tools=[...]) accepting tool names or instances; if omitted, only extras-marked tools defer",
+   "No need to know the beta flag string or the tool_search_tool_regex server-tool type/date-stamp \u2014 the middleware abstracts all provider wiring",
+   "Model is passed as a provider:model string (e.g. \"anthropic:claude-opus-4-8\"); provider-gated to Claude Sonnet4+/Opus4+/Haiku4.5+ or OpenAI gpt-5.5+, else ValueError",
+   "JS equivalent: providerToolSearchMiddleware({ searchableTools }) imported from \"langchain\""
+  ],
+  "what_model_did": "Hand-rolled Anthropic's provider-side tool search at the raw-API level \u2014 ChatAnthropic(betas=[...]) plus a guessed server-tool dict in tools= and a per-tool metadata[\"defer_loading\"] flag \u2014 instead of using the documented ProviderToolSearchMiddleware, and explicitly admitted it was guessing.",
+  "self_confidence": "low",
+  "admitted_unknown": true
+ },
+ {
+  "id": "R7",
+  "fw": "LangGraph",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "`graph.invoke(input, config, durability=\"exit\"|\"async\"|\"sync\")` and `graph.stream(input, config, durability=...)` on a graph compiled with a checkpointer (e.g. `builder.compile(checkpointer=InMemorySaver())`). Modes, least\u2192most durable: \"exit\" (persist only when the run exits \u2014 lowest latency, no mid-run crash recovery), \"async\" (persist asynchronously while the next step runs \u2014 the DEFAULT, good balance), \"sync\" (persist synchronously before the next step \u2014 highest durability, some overhead). Confirmed in checkpointers.mdx \"Durability modes\" (lines 577-603).",
+  "key_deltas": [
+   "Old boolean `checkpoint_during=True/False` (or no such knob) -> new `durability=\"exit\"|\"async\"|\"sync\"` string on invoke/stream",
+   "Default is `durability=\"async\"` (persist asynchronously while next step runs)",
+   "\"exit\" trades away mid-run durability for lowest latency; \"sync\" is highest durability/highest latency"
+  ],
+  "what_model_did": "Used the current `durability=` parameter (values \"exit\"/\"async\"/\"sync\") passed directly to graph.invoke/stream, with correct semantics and correct default (\"async\"), and correctly noted it replaced the old boolean `checkpoint_during`.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R8",
+  "fw": "LangGraph",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "The current idiom for this exact task is `DeltaChannel` (langgraph>=1.2, beta): `from langgraph.channels import DeltaChannel`, then `messages: Annotated[list[str], DeltaChannel(bulk_reducer, snapshot_frequency=K)]` in the TypedDict State. This KEEPS the growing list in checkpointed State and preserves reducer semantics, but serializes only per-step deltas (a MISSING sentinel + raw writes) so each checkpoint blob is O(1) instead of O(N). The reducer is a BULK reducer with signature `(state, writes: Sequence[...]) -> ...` (all writes for the step in one call, not pairwise), and it must be associative + pure because it runs on RECONSTRUCTION, not on write (no uuid/datetime/side effects; assign stable IDs upstream). `snapshot_frequency=K` writes a full snapshot every K steps to bound read latency (default None). Separately, the current way to access a store inside a node is `runtime.store` via a `runtime: Runtime[Context]` node parameter \u2014 not `get_store()` from `langgraph.config` (that module only exports `get_stream_writer`), nor an injected `store: BaseStore` param, nor `graph.store`.",
+  "key_deltas": [
+   "The model never used DeltaChannel \u2014 the exact purpose-built feature for shrinking checkpoint blobs while preserving reducer semantics. Old default: offload the list to the Store + cursor. New/current: `Annotated[list, DeltaChannel(bulk_reducer, snapshot_frequency=K)]` from `langgraph.channels`, keeping the list a reducer channel in State.",
+   "DeltaChannel's reducer is a bulk reducer `(state, writes: Sequence[list]) -> list` (receives all step writes at once), NOT the pairwise `operator.add` / add_messages reducer the model assumed; it must be associative and pure because it runs at reconstruction time, not write time.",
+   "`snapshot_frequency=K` is the knob that bounds O(N) read replay to O(K); default None. This trade-off (storage vs read latency) has no analog in the model's store-offload answer.",
+   "Requires `langgraph>=1.2` and is beta; downgrading LangGraph after a thread uses DeltaChannel leaves those checkpoints unreadable (new on-disk delta format).",
+   "Store access idiom is outdated: current docs use `runtime.store` via `runtime: Runtime[Context]` node param, not `get_store()` from `langgraph.config`, not an injected `store: BaseStore` param, not `graph.store`.",
+   "The store-offload approach does NOT satisfy the task's explicit 'preserve the reducer semantics' constraint \u2014 it removes the reducer channel entirely and forces manual key-per-item writes + reconstruction."
+  ],
+  "what_model_did": "Correctly diagnosed the O(n^2) full-list-per-checkpoint problem, but instead of the purpose-built current API it offloaded the growing list out of checkpointed State into the long-term Store (InMemoryStore/BaseStore) with a cursor in State, writing one key per item and reconstructing via store.search \u2014 abandoning the reducer channel rather than preserving it.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R9",
+  "fw": "LangGraph",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "pip install langgraph langgraph-checkpoint-postgres \"psycopg[binary,pool]\" pycryptodome. Imports: `from langgraph.checkpoint.postgres import PostgresSaver`, `from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver`, `from langgraph.checkpoint.serde.encrypted import EncryptedSerializer`. Encryption: `serde = EncryptedSerializer.from_pycryptodome_aes()` (reads LANGGRAPH_AES_KEY env var or accepts a `key` arg; requires pycryptodome). Wire it: `PostgresSaver.from_conn_string(DB_URI, serde=serde)` then `checkpointer.setup()`, or `PostgresSaver(pool, serde=serde)` with a psycopg ConnectionPool using kwargs {\"autocommit\": True, \"prepare_threshold\": 0}. Compile with `builder.compile(checkpointer=checkpointer)`; thread_id passed in config[\"configurable\"]. All confirmed verbatim in checkpointers.mdx (lines 693-711) and add-memory.mdx (lines 94, 106, 151).",
+  "key_deltas": [
+   "No deltas needed \u2014 the answer is fully current. serde=EncryptedSerializer.from_pycryptodome_aes() reading LANGGRAPH_AES_KEY matches checkpointers.mdx exactly.",
+   "Note (already correct in answer): PostgresSaver.from_conn_string(DB_URI, serde=serde) + checkpointer.setup() is the doc-canonical form; the ConnectionPool(autocommit=True, prepare_threshold=0) variant is also valid."
+  ],
+  "what_model_did": "Set up LangGraph Postgres persistence with at-rest encryption using langgraph-checkpoint-postgres + PostgresSaver/AsyncPostgresSaver, and EncryptedSerializer.from_pycryptodome_aes() (reading LANGGRAPH_AES_KEY) passed as serde, with both the ConnectionPool and from_conn_string setups.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R10",
+  "fw": "DeepAgents",
+  "verdict": "outdated_confident",
+  "value": "high",
+  "include": true,
+  "current_api": "deepagents ships a purpose-built `RubricMiddleware` (requires deepagents>=0.6.5, beta) \u2014 this is the current mechanism for exactly this task. Add it to the middleware list: `create_deep_agent(tools=..., system_prompt=..., middleware=[RubricMiddleware(model=\"anthropic:claude-...\", max_iterations=3, system_prompt=<optional grader prompt>, tools=<optional evidence-gathering tools>, on_evaluation=<optional callback>)])`. Trigger the self-evaluate/iterate loop by passing a `rubric` string on invocation state: `agent.invoke({\"messages\": [...], \"rubric\": \"<newline-delimited criteria>\"})`; if no `rubric` is supplied the middleware does not run. After each output the LLM-as-judge grader sub-agent returns one of a fixed verdict enum \u2014 `satisfied` / `needs_revision` (feedback injected, agent re-runs) / `max_iterations_reached` / `failed` / `grader_error` \u2014 rather than a free-form PASS/FAIL you parse yourself. Observe progress via the `on_evaluation` callback (a `RubricEvaluation` dict with grading_run_id/iteration/result/explanation/criteria) or `rubric_evaluation_start`/`rubric_evaluation_end` events on `stream.custom`; terminal status is on private state `_rubric_status`. A `RubricCodeGenerationMiddleware` variant exists for vetted code generation.",
+  "key_deltas": [
+   "The current deepagents mechanism is the built-in `RubricMiddleware` (deepagents>=0.6.5, beta) added to `middleware=[...]`, NOT a hand-rolled critique subagent + prompt-driven revision loop; the model's stated premise 'deepagents has no dedicated judge-loop primitive' is false.",
+   "Start the loop by passing a `rubric` string on invoke state (`agent.invoke({'messages':[...], 'rubric': '...'})`), not by embedding the rubric in the agent's instructions; with no `rubric` supplied the middleware is inert.",
+   "Configure the grader on the middleware, not in prose: `RubricMiddleware(model=..., max_iterations=3, system_prompt=..., tools=..., on_evaluation=...)`. `max_iterations` defaults to 3 (model instead hard-coded 'iterate at most 4' in the prompt).",
+   "Verdicts are a fixed enum \u2014 satisfied / needs_revision / max_iterations_reached / failed / grader_error \u2014 with automatic per-criterion feedback injection and loop-back on needs_revision; you do not self-parse a PASS/FAIL string or manage the retry loop by hand.",
+   "Give the grader `tools=` (e.g. a run_test_suite tool) to gather evidence before verdict instead of reasoning from the transcript alone; observe via `on_evaluation` callback or `rubric_evaluation_start`/`_end` on `stream.custom`; there is also a `RubricCodeGenerationMiddleware` variant.",
+   "Secondary: deepagents subagent-spec key is `system_prompt`, not the outdated `prompt` key the model used."
+  ],
+  "what_model_did": "At high confidence, the model claimed deepagents has no dedicated judge-loop primitive and hand-rolled an LLM-as-judge loop using a critique subagent (dict with name/description/prompt) plus main-agent instructions that draft-to-file, dispatch via the built-in `task` tool, and revise until a self-parsed PASS.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R11",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "The current deepagents mechanism for spawning a runtime-variable number of subagents \"from code\" is Dynamic subagents (Beta), which runs on the interpreter runtime. Install `deepagents[quickjs]` plus `langchain-quickjs>=0.2.0` (Python >=3.11), then pass interpreter middleware via the `middleware=` arg: `from deepagents import create_deep_agent` and add `CodeInterpreterMiddleware(...)` (import from the interpreter/deepagents middleware surface). When the agent has subagents AND interpreter middleware, the interpreter exposes a built-in `task()` global (on by default; `CodeInterpreterMiddleware(subagents=True)`). The agent then writes JavaScript in the `eval` tool that holds work in variables and dispatches subagents in loops/parallel batches with `task({ description, subagentType, responseSchema? })` \u2014 so the count is decided at runtime in code, not fixed at emit time. The built-in `general-purpose` subagent handles basic fan-out with no extra config (auto-added unless you supply one named `general-purpose`). Trigger dynamic orchestration by including the literal word \"workflow\" in the prompt. For discovering the item set from code, enable programmatic tool calling (PTC) with an allowlist (e.g. `glob`). Constructor uses `system_prompt=` (not `instructions=`) and a `provider:model` model string resolved via init_chat_model, e.g. `model=\"anthropic:claude-sonnet-4-6\"`. Disable via `CodeInterpreterMiddleware(subagents=False)` to force the normal `task` tool.",
+  "key_deltas": [
+   "Mechanism: 'spawn subagents programmatically from code' = Dynamic subagents via the interpreter (`CodeInterpreterMiddleware` + built-in `task()` global called from JS `eval` code), NOT emitting N parallel `task` tool calls in one model turn \u2014 the docs explicitly frame the parallel-tool-call approach as the unreliable thing dynamic subagents replace.",
+   "Wiring: pass `CodeInterpreterMiddleware(...)` through `create_deep_agent(middleware=[...])`; requires `deepagents[quickjs]` + `langchain-quickjs>=0.2.0` + Python >=3.11. `task()` dispatch is ON by default whenever the agent has subagents; disable with `CodeInterpreterMiddleware(subagents=False)`.",
+   "Trigger: include the literal word 'workflow' in the prompt to make the code-interpreter deep agent fan out subagents from code; a plain request instead does a single direct delegation.",
+   "`task()` from code takes `description`, `subagentType` (JS) / `subagent_type` (Py), optional `responseSchema`; hold work in interpreter variables and loop/parallel-batch the calls, so N is runtime-decided in code. Discovering the item set from code needs PTC (allowlist e.g. `glob`).",
+   "Do NOT drop to LangGraph `Send` for code-driven deepagents fan-out \u2014 dynamic subagents is the deepagents-native mechanism; `Send` is not the recommended path here.",
+   "Constructor param is `system_prompt=`, not `instructions=`.",
+   "Model string is `provider:model` resolved via init_chat_model, e.g. `\"anthropic:claude-sonnet-4-6\"`, not a bare real id like `\"claude-sonnet-4-5-20250929\"` (docs also use future/fictional ids that must not be 'corrected')."
+  ],
+  "what_model_did": "Answered with the normal model-chosen `task` tool path \u2014 letting the LLM emit N parallel `task` tool calls in one turn under `create_deep_agent(tools=, instructions=, model=)` with the auto-created general-purpose subagent \u2014 and dismissed truly code-driven fan-out to LangGraph's `Send`, missing the interpreter-based dynamic-subagents mechanism entirely.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "R12",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "The current deepagents mechanism is the Interpreters feature with programmatic tool calling (PTC), Beta. Install the QuickJS extra: `pip install -U \"deepagents[quickjs]\"` (requires `langchain-quickjs>=0.2.0`, Python >=3.11). Import `from deepagents.middleware import CodeInterpreterMiddleware` and pass it via `create_deep_agent(tools=[...], model=..., system_prompt=..., middleware=[CodeInterpreterMiddleware(ptc=[search, fetch, score])])`. The middleware adds an `eval` tool; the agent writes JavaScript (QuickJS, in-memory, no host filesystem/network/shell/clock by default) and orchestrates the allowlisted tools in loops/branches/retries/parallel batches under a `tools.*` namespace \u2014 tool names are camelCased and awaited (e.g. `web_search` -> `await tools.webSearch(...)`); only the final interpreter result returns to the model. PTC is OFF by default and is enabled solely via the `ptc=` allowlist (tool-name strings or BaseTool instances). Other kwargs: `max_ptc_calls` (default 256), `mode` (\"thread\"/\"turn\"/\"call\", default \"thread\"), `timeout` (5.0s), `tool_name` (\"eval\"), `capture_console`, `max_result_chars`, `subagents` (True). JS equivalent: `createCodeInterpreterMiddleware({ ptc: [...] })` with `@langchain/quickjs`. This is the in-loop, non-remote-sandbox path; a full remote sandbox would instead use a sandbox backend.",
+  "key_deltas": [
+   "Class/import: invented `CodeExecutionMiddleware` -> real is `CodeInterpreterMiddleware` (Py, `from deepagents.middleware import CodeInterpreterMiddleware`) / `createCodeInterpreterMiddleware` (JS)",
+   "Enable mechanism: `tools=..., sandbox=False` (invented) -> the allowlist kwarg is `ptc=[<tool names or BaseTool instances>]`; PTC is OFF by default and enabled only via `ptc=`",
+   "No `sandbox=False` toggle exists \u2014 interpreters are inherently a scoped QuickJS in-memory runtime, distinct from sandbox backends; that non-sandbox property is intrinsic, not a flag",
+   "Interpreter language is JavaScript/QuickJS, NOT Python; the added tool is `eval` (not `execute_python`), and tools are exposed under `tools.*` camelCased and awaited (e.g. `web_search` -> `await tools.webSearch(...)`)",
+   "Requires the `deepagents[quickjs]` extra, `langchain-quickjs>=0.2.0`, and Python >=3.11",
+   "create_deep_agent prompt param is `system_prompt=`, not `instructions=`",
+   "Feature is Beta; PTC calls bypass `interrupt_on` approval; `max_ptc_calls` default 256; persistence `mode` default 'thread'; model IDs use `provider:model` (e.g. `anthropic:claude-sonnet-4-6`)"
+  ],
+  "what_model_did": "Correctly identified the concept (code execution / in-loop programmatic tool calling via a lightweight local interpreter, not a remote sandbox) and the create_deep_agent + middleware surface, but invented the concrete API \u2014 a non-existent `CodeExecutionMiddleware(tools=..., sandbox=False)` \u2014 and assumed the interpreter runs Python, all self-flagged as guesses.",
+  "self_confidence": "low",
+  "admitted_unknown": true
+ }
+]

@@ -1,0 +1,474 @@
+[
+ {
+  "id": "A1",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "from langchain.agents import create_agent; tools defined as plain callables or via `from langchain.tools import tool` (@tool); create_agent(model=\"anthropic:claude-sonnet-4-6\", tools=[...], system_prompt=\"...\"); result = agent.invoke({\"messages\": [{\"role\": \"user\", \"content\": \"...\"}]}); read result[\"messages\"][-1].content (docs' quickstart now prints .content_blocks). Model accepts a \"provider:model\" string or a BaseChatModel instance. This exactly matches langchain/quickstart.mdx and langchain/agents.mdx.",
+  "key_deltas": [
+   "Import path (cosmetic only): docs use `from langchain.tools import tool`; model used the pre-v1 `from langchain_core.tools import tool`, which still works as a re-export so nothing breaks",
+   "Output access: docs' quickstart shows `result[\"messages\"][-1].content_blocks` (v1 typed content-blocks API); model's `.content` remains valid",
+   "Model correctly used `create_agent` (NOT the deprecated create_react_agent/AgentExecutor) \u2014 the catalog's #1 gotcha, which it got right"
+  ],
+  "what_model_did": "Built the agent with create_agent from langchain.agents, plain @tool functions, a provider:model string, and a messages-dict invoke reading result[\"messages\"][-1].content \u2014 the current LangChain v1 idiom.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "A2",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "Exactly the model's code. Per langchain/middleware/custom.mdx and multi-agent/handoffs.mdx: `from langchain.agents import create_agent`; `from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse`; subclass AgentMiddleware and define `def wrap_model_call(self, request: ModelRequest, handler) -> ModelResponse`; read state via `request.state` (e.g. `request.state[\"messages\"]`); rewrite the prompt with `request.override(system_prompt=...)` (a string kwarg is valid and documented in handoffs.mdx: `request.override(system_prompt=config[\"prompt\"].format(**request.state), tools=...)`), then `return handler(request)`. Attach with `create_agent(model=\"openai:gpt-4o\", tools=[...], middleware=[DynamicSystemPromptMiddleware()])`. (Docs also show `override(system_message=SystemMessage(...))` and the `@dynamic_prompt` decorator returning str as alternatives \u2014 the model correctly named both.)",
+  "key_deltas": [
+   "create_agent (langchain.agents) not create_react_agent, with the new middleware=[...] kwarg",
+   "wrap_model_call(request, handler) replaced the removed modify_model_request",
+   "request.override(...) immutable-update pattern; override(system_prompt=str) and override(system_message=SystemMessage) both valid",
+   "AgentMiddleware/ModelRequest/ModelResponse import from langchain.agents.middleware",
+   "@dynamic_prompt (request: ModelRequest) -> str is the convenience shortcut built on wrap_model_call"
+  ],
+  "what_model_did": "Subclassed AgentMiddleware and implemented wrap_model_call(self, request, handler) -> ModelResponse, read request.state[\"messages\"], rewrote the prompt with request.override(system_prompt=...), and attached it via middleware=[Instance()] on create_agent.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "A3",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "`from langchain.agents import create_agent`; `agent = create_agent(model=\"anthropic:...\", tools=[], response_format=ContactInfo)` where ContactInfo is a `pydantic.BaseModel` subclass (dataclass/TypedDict/JSON schema also accepted). Passing a bare schema type auto-selects `ProviderStrategy` for providers with native structured output (Anthropic/OpenAI/xAI/Gemini) else `ToolStrategy`; both importable from `langchain.agents.structured_output`. Call `agent.invoke({\"messages\":[...]})` and read the validated instance from `result[\"structured_response\"]` (JS: `structuredResponse`). This is agent-level structured output, distinct from bare-model `.with_structured_output()`.",
+  "key_deltas": [
+   "create_react_agent/AgentExecutor -> langchain.agents.create_agent (model already stated this correctly)",
+   "bare model.with_structured_output() -> agent response_format= returning result['structured_response'] (model distinguished correctly)",
+   "ToolStrategy/ProviderStrategy live in langchain.agents.structured_output (model referenced them correctly)"
+  ],
+  "what_model_did": "Used `create_agent` from `langchain.agents` with `response_format=ContactInfo` (a bare Pydantic model) and read the parsed instance from `result[\"structured_response\"]`, correctly noting auto-selection of ProviderStrategy/ToolStrategy.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "A4",
+  "fw": "LangChain",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "from langchain.agents import create_agent; from langchain.agents.middleware import SummarizationMiddleware. Attach via create_agent(model=..., tools=[...], middleware=[SummarizationMiddleware(model=\"provider:model-or-BaseChatModel\", trigger=(\"tokens\", 4000), keep=(\"messages\", 20))]). trigger takes a ContextSize tuple (\"tokens\"/\"messages\"/\"fraction\", value), a TriggerClause dict {\"tokens\":4000,\"messages\":10} (AND logic), or a list of those (OR logic); keep takes one ContextSize tuple and defaults to (\"messages\", 20). Optional: token_counter, summary_prompt, trim_tokens_to_summarize (default 4000).",
+  "key_deltas": [
+   "max_tokens_before_summary=4000 (DEPRECATED) -> trigger=(\"tokens\", 4000)",
+   "messages_to_keep=20 (DEPRECATED) -> keep=(\"messages\", 20)",
+   "summary_prefix (DEPRECATED) -> summary_prompt",
+   "trigger also accepts fraction: trigger=(\"fraction\", 0.8); keep=(\"fraction\", 0.3)",
+   "trigger supports multi-threshold TriggerClause dicts (AND) and lists (OR); keep defaults to (\"messages\", 20)"
+  ],
+  "what_model_did": "Built the agent with create_agent and attached SummarizationMiddleware via middleware=[...] (all import paths and scaffolding correct), but configured the middleware with the deprecated max_tokens_before_summary and messages_to_keep parameters instead of the current trigger/keep tuples.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "A5",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "Current idiom (tools.mdx \"Access context\"): `from langchain.tools import tool, ToolRuntime`. A tool declares a single auto-injected `runtime: ToolRuntime` (optionally `ToolRuntime[Context]`) parameter that is hidden from the model, and reads `runtime.context.<field>` (immutable per-invocation data, e.g. user_id), `runtime.store` (persistent `BaseStore`, `store.get(namespace, key)` / `store.put(namespace, key, value)`), and `runtime.state[\"messages\"]` (short-term state). Wire it with `create_agent(model, tools=[...], context_schema=Context, store=InMemoryStore())` (from `langgraph.store.memory import InMemoryStore`) and invoke with a top-level `context=Context(user_id=...)` (thread_id still goes in `config={\"configurable\":{...}}`). This replaces `InjectedState`/`InjectedStore`/`InjectedToolCallId`/`get_runtime()` and reading `config[\"configurable\"]`.",
+  "key_deltas": [
+   "OLD: Annotated[BaseStore, InjectedStore()] + Annotated[dict, InjectedState] + config: RunnableConfig reading config['configurable']['user_id'] -> NEW: single runtime: ToolRuntime param with runtime.store / runtime.state / runtime.context.user_id",
+   "OLD: config_schema + config={'configurable':{...}} for runtime context -> NEW: create_agent(context_schema=Context) + invoke(context=Context(...)), read runtime.context (thread_id stays in configurable)",
+   "Imports moved to langchain.tools (tool, ToolRuntime) rather than langgraph.prebuilt / langchain_core"
+  ],
+  "what_model_did": "Used the unified `ToolRuntime` injected tool parameter (`runtime.context.user_id`, `runtime.store`, `runtime.state`) with `@tool`, wiring context via `create_agent(context_schema=Context, store=store)` and passing `context=Context(...)` at `invoke`; also correctly named the superseded `InjectedState`/`InjectedStore`/`RunnableConfig` pattern.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "A6",
+  "fw": "LangChain",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "from langchain.agents import create_agent; from langchain.tools import tool, ToolRuntime. Define a @dataclass (or TypedDict/Pydantic) context schema. Construct: create_agent(model=\"provider:model\", tools=[...], context_schema=Context). Invoke: agent.invoke({\"messages\":[...]}, context=Context(user_id=..., tier=...)). Inside a tool: def my_tool(runtime: ToolRuntime[Context]) -> str: runtime.context.user_id. (Equivalent: from langgraph.runtime import get_runtime; get_runtime(Context).context.user_id.) This replaces the old config_schema= + config={\"configurable\":{...}} + InjectedState/InjectedStore pattern.",
+  "key_deltas": [
+   "config_schema= / config={'configurable':{...}} -> context_schema= on create_agent + context= at invoke",
+   "InjectedState/InjectedStore/InjectedToolCallId/RunnableConfig in tools -> single injected ToolRuntime[Context] param (runtime.context/.store/.state/.tool_call_id)",
+   "runtime accessor: runtime.context.<field> (model already used this correctly)"
+  ],
+  "what_model_did": "Used the current LangChain 1.0 runtime-context API verbatim: dataclass context schema, create_agent(context_schema=...), agent.invoke(..., context=...), and read it inside a tool via an injected ToolRuntime[Context] param (runtime.context.user_id).",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "A7",
+  "fw": "LangChain",
+  "verdict": "outdated_confident",
+  "value": "high",
+  "include": true,
+  "current_api": "The current recommended pattern is the \"subagents\" (agent-as-tool) pattern built entirely on `langchain.agents.create_agent`. Import `from langchain.agents import create_agent` and `from langchain.tools import tool`. Build each specialist as `sub = create_agent(model=\"anthropic:claude-sonnet-4-6\", tools=[...], system_prompt=...)`, wrap it in a tool `@tool(\"research\", description=...) def call_research(query: str): return sub.invoke({\"messages\":[{\"role\":\"user\",\"content\":query}]})[\"messages\"][-1].content`, then a coordinator `create_agent(model=..., tools=[call_research, call_writer], system_prompt=\"You coordinate specialized sub-agents...\")`. Alternatively use the single-dispatch pattern: one `@tool def task(agent_name: str, description: str)` that looks the agent up in a `SUBAGENTS` registry and invokes it. `create_agent` returns an already-compiled graph, so there is NO `.compile()` step and no uncompiled StateGraph. `create_supervisor` / `langgraph-supervisor` is explicitly no longer maintained (a migration guide exists).",
+  "key_deltas": [
+   "`create_supervisor` / `langgraph-supervisor` is deprecated and no longer maintained -> use the agent-as-tool subagents pattern (wrap each `create_agent` sub-agent in a `@tool`) or a single-dispatch `task(agent_name, description)` tool over a registry",
+   "`create_react_agent` from `langgraph.prebuilt` -> `create_agent` from `langchain.agents`",
+   "`from langchain_core.tools import tool` -> `from langchain.tools import tool`",
+   "No `create_supervisor(...).compile()` / no uncompiled StateGraph step -> `create_agent` returns an already-compiled runnable graph; the supervisor is just a coordinator `create_agent` whose tools are the sub-agents",
+   "Routing/naming is done via the wrapping tool's name+description (or a `task` dispatch tool), not a `name=` param on sub-agents for supervisor handoff",
+   "Sub-agent inputs/outputs use `ToolRuntime`/`InjectedToolCallId` + `Command(update=...)` for state passing, not supervisor handoff wiring",
+   "Model IDs in current docs are future/fictional (e.g. `claude-sonnet-4-6`, `gpt-5.5`) \u2014 do not 'correct' them to `claude-sonnet-4-5`"
+  ],
+  "what_model_did": "Built the multi-agent system with the deprecated `langgraph-supervisor` package \u2014 `create_supervisor(agents=[...]).compile()` over sub-agents made with `langgraph.prebuilt.create_react_agent` \u2014 and called this \"the current recommended multi-agent pattern.\"",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "B1",
+  "fw": "LangGraph",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "from langgraph.runtime import Runtime; define context schema as a @dataclass (or TypedDict); StateGraph(State, context_schema=ContextSchema); node signature def node(state, runtime: Runtime[ContextSchema]) reads runtime.context.<field>; provide context at call time with graph.invoke(inputs, context=ContextSchema(...)) \u2014 a dataclass instance (docs use-graph-api.mdx:1228) or a plain dict (graph-api.mdx:1388) both work. Runtime also exposes .store, .stream_writer, .execution_info, .server_info. Note: thread_id still goes in config={\"configurable\":{...}}, not context.",
+  "key_deltas": [
+   "context_schema= on StateGraph replaced config_schema= (0 hits in docs)",
+   "Per-run data is passed via top-level context= kwarg on invoke/stream, not config={'configurable':{...}}",
+   "Nodes take a second param runtime: Runtime[Context] and read runtime.context.x, replacing the (state, config) + config['configurable'] pattern (which still works as legacy)",
+   "Runtime is imported from langgraph.runtime and is generic over the context schema",
+   "thread_id remains in config['configurable'] \u2014 the split from context= is the trap (model did not need to mention it here and did not err)"
+  ],
+  "what_model_did": "Defined a dataclass context schema, registered it via StateGraph(State, context_schema=...), used a (state, runtime: Runtime[Context]) node signature reading runtime.context, and supplied per-run data with graph.invoke(..., context=RuntimeContext(...)).",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "B2",
+  "fw": "LangGraph",
+  "verdict": "partial",
+  "value": "low",
+  "include": true,
+  "current_api": "`from langgraph.types import interrupt, Command`; call `interrupt(payload)` (JSON-serializable) inside a node \u2014 on resume it returns the human value. Compile with a checkpointer and pass `config={\"configurable\":{\"thread_id\":...}}`. Python checkpointer class is now `InMemorySaver` from `langgraph.checkpoint.memory` (`MemorySaver` remains only as a backward-compat alias). Recommended driver is `graph.stream_events(inputs, config=config, version=\"v3\")`, checking `stream.interrupted` and reading payloads from `stream.interrupts`, then resuming with `graph.stream_events(Command(resume=value), config, version=\"v3\")`. The default `graph.invoke(...)` still works and surfaces interrupts under `result[\"__interrupt__\"]` (list of Interrupt objects with `.value`); resume with `graph.invoke(Command(resume=value), config)`. Parallel interrupts resume via an id-keyed map `Command(resume={interrupt_id: value})`. Static `interrupt_before/after` is demoted to debugging; `raise NodeInterrupt` is gone.",
+  "key_deltas": [
+   "Python checkpointer class is now `InMemorySaver` (from `langgraph.checkpoint.memory`); the model's `MemorySaver` works only as a legacy alias",
+   "Recommended HITL driver is `graph.stream_events(..., version=\"v3\")` with typed `stream.interrupted`/`stream.interrupts` projections; the model's `invoke` + `result[\"__interrupt__\"]` path still works but is the non-recommended fallback per the docs",
+   "Multiple simultaneous (parallel-branch) interrupts resume via an id-keyed map `Command(resume={interrupt_id: value})`, not a bare value \u2014 not covered by the single-value example",
+   "Correct and worth reinforcing: `raise NodeInterrupt` is removed and static `interrupt_before/after` is debugging-only; `interrupt()` + `Command(resume=...)` is the sole dynamic HITL pattern"
+  ],
+  "what_model_did": "Used the correct dynamic HITL pattern \u2014 `interrupt(payload)` inside a node, `Command(resume=...)` on the same thread_id, checkpointer + `{\"configurable\":{\"thread_id\":...}}`, resume value returned from `interrupt()`, and `result[\"__interrupt__\"]` for the pending payload \u2014 driven via `graph.invoke`.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "B3",
+  "fw": "LangGraph",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "Node caching (model correct): `from langgraph.types import CachePolicy`; `from langgraph.cache.memory import InMemoryCache` (or `SqliteCache`); `add_node(name, fn, cache_policy=CachePolicy(ttl=120, key_func=...))`; `compile(cache=InMemoryCache())`. Retry (model correct): `from langgraph.types import RetryPolicy`; `RetryPolicy(max_attempts=3, initial_interval=0.5, backoff_factor=2.0, max_interval=128.0, jitter=True, retry_on=<exc type | Sequence[exc] | Callable[[Exception],bool]>)`; `add_node(..., retry_policy=...)`. MISSED \u2014 declarative error handling (langgraph>=1.2): `from langgraph.errors import NodeError`; `add_node(name, fn, error_handler=handler)` where `def handler(state: State, error: NodeError) -> Command:` returns a `Command(update=..., goto=...)` for compensation/saga. The handler runs ONLY after the retry policy is exhausted (retry and error_handler are decoupled), or immediately if no retry policy is set. `NodeError` is a frozen dataclass with fields `node: str` and `error: BaseException`; the `error: NodeError` param is injected by type annotation (same pattern as `runtime: Runtime`) and is opt-in \u2014 handlers can also be `(state)` or `(state, runtime)`. `interrupt()` is not routed to the handler. Graph-wide (also missed): `builder.set_node_defaults(retry_policy=..., error_handler=..., timeout=..., cache_policy=...)`; error-handler nodes are excluded from the `error_handler` and `cache_policy` defaults.",
+  "key_deltas": [
+   "Declarative error handling is a distinct API from retry: add_node(..., error_handler=fn), NOT covered by RetryPolicy. The model wrongly assumed retry_policy was the whole 'error handling' answer.",
+   "error_handler signature: def fn(state, error: NodeError) -> Command \u2014 import NodeError from langgraph.errors; return a Command(update=..., goto=...) for compensation/saga routing.",
+   "NodeError is a frozen dataclass with two fields: node (str) and error (BaseException); the error param is injected by annotation (like runtime: Runtime) and is opt-in.",
+   "Ordering guarantee: error_handler fires only AFTER the retry policy is exhausted (or immediately if no retry policy); retry and error handling are decoupled and configured independently.",
+   "set_node_defaults(retry_policy=, error_handler=, timeout=, cache_policy=) applies these graph-wide instead of per-node; error-handler nodes are excluded from error_handler and cache_policy defaults.",
+   "Requires langgraph>=1.2 (JS: errorHandler on StateGraph.addNode requires @langchain/langgraph>=1.4.0)."
+  ],
+  "what_model_did": "Used CachePolicy + InMemoryCache for node caching and RetryPolicy for retries \u2014 both fully current and idiomatic \u2014 but treated RetryPolicy as the \"error handling\" and omitted the declarative error_handler=/NodeError API the task specifically asked for.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "B4",
+  "fw": "LangGraph",
+  "verdict": "correct",
+  "value": "low",
+  "include": false,
+  "current_api": "`from langgraph.func import entrypoint, task` and `from langgraph.checkpoint.memory import InMemorySaver`. Define units of work with `@task` (call returns a future; resolve with `.result()` or `await`). Define the workflow with `@entrypoint(checkpointer=checkpointer)`; the decorated function takes one positional input plus optional injectable keyword-only params (`previous`, `store`, `writer`, `config`). Short-term memory: with a checkpointer attached, `previous` holds the entrypoint's last return value for the same `thread_id` (`def wf(x, *, previous=None)`). `entrypoint.final(value=<to caller>, save=<checkpointed as next previous>)` decouples returned value from saved state. Invoke with `wf.invoke(input, {\"configurable\": {\"thread_id\": ...}})`; same thread_id carries memory, different thread_id starts fresh. (JS differs: `getPreviousState()` instead of `previous`, `MemorySaver` instead of `InMemorySaver`.)",
+  "key_deltas": [],
+  "what_model_did": "Used the current LangGraph Functional API from internal knowledge \u2014 `@entrypoint(checkpointer=...)` + `@task` (with `.result()`) from `langgraph.func`, the injected keyword-only `previous` param for prior thread state, `entrypoint.final(value=, save=)`, `InMemorySaver`, and thread_id in config `configurable` \u2014 all matching the docs verbatim.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "B5",
+  "fw": "LangGraph",
+  "verdict": "outdated_confident",
+  "value": "high",
+  "include": true,
+  "current_api": "Event streaming is the recommended in-process streaming API (LangGraph v1.2+): `stream = graph.stream_events(input, version=\"v3\")` (sync) / `await graph.astream_events(input, version=\"v3\")` (async), where `create_agent(...)` returns a compiled graph exposing it. Consume typed projections as attributes on the returned run-stream object: `stream.messages` (per message, iterate `message.text` for token deltas or `str(message.text)` for full text; `message.tool_calls` for tool-call arg chunks; `message.reasoning`; `message.output.usage_metadata`; `message.node`), `stream.values`, `stream.output` (await final), `stream.subgraphs`, `stream.interrupts`/`stream.interrupted`, `stream.extensions`. Tool-call projection: register `ToolCallTransformer` (`from langgraph.prebuilt import ToolCallTransformer`, passed via `transformers=[...]`) to expose `stream.tool_calls` (`tool_call.tool_name`, `tool_call.input`); LangChain agents surface `stream.tool_calls` as a product projection (see /oss/langchain/event-streaming). Multiplex projections with `stream.interleave(\"values\",\"messages\",\"subgraphs\")` (sync) or `asyncio.gather` over projection iterators (async); resume after interrupt by calling `stream_events(Command(resume=...), version=\"v3\")` again. The lower-level stream-mode API still exists but its current format is `graph.stream(..., stream_mode=[...], version=\"v2\")` yielding uniform `StreamPart` dicts (`chunk[\"type\"]`/`chunk[\"ns\"]`/`chunk[\"data\"]`, with messages data being `(message_chunk, metadata)`), NOT v1 `(mode, chunk)` tuples.",
+  "key_deltas": [
+   "Recommended in-process streaming is now event streaming: graph.stream_events / astream_events(..., version=\"v3\") \u2014 NOT graph.stream(stream_mode=[...]). The model inverted the recommendation, calling stream_events the 'older' API.",
+   "Current event-stream version is version=\"v3\" (model said v2 and mislabeled it legacy).",
+   "Typed projections are attributes on the returned run-stream object (stream.messages, stream.values, stream.output, stream.subgraphs, stream.tool_calls, stream.interrupts, stream.extensions) \u2014 replace branching on (mode, chunk) tuples.",
+   "Token streaming: iterate message.text from stream.messages (message.text is iterable), not AIMessageChunk.content / message_chunk.content.",
+   "Tool-call typed projection uses ToolCallTransformer from langgraph.prebuilt to expose stream.tool_calls (tool_call.tool_name / tool_call.input); message.tool_calls on the messages projection carries tool-call arg chunks.",
+   "If using the lower-level stream-mode API, current output format is version=\"v2\" -> StreamPart dicts {type, ns, data}, not the v1 (mode, chunk) tuples the model wrote.",
+   "Multiplex projections via stream.interleave(...) (sync) or asyncio.gather over projection iterators (async), and resume with stream_events(Command(resume=...), version=\"v3\")."
+  ],
+  "what_model_did": "Streamed via the old stream-mode API \u2014 `agent.stream(inputs, stream_mode=[\"updates\",\"messages\"])` consuming v1-format `(mode, chunk)` tuples \u2014 and explicitly asserted that `stream_mode=\"messages\"` is now preferred while `astream_events(version=\"v2\")` is the \"older\" API, which is backwards.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C1",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "Install: `pip install deepagents` (docs add `tavily-python` for the example search tool). `from deepagents import create_deep_agent`. Constructor signature the docs use: `create_deep_agent(model=\"anthropic:claude-sonnet-4-6\", tools=[...], system_prompt=\"...\")` \u2014 the prompt kwarg is `system_prompt=`, NOT `instructions=`, and `model=` takes a `provider:model` string (resolved via `init_chat_model`) or a `BaseChatModel` instance. Planning + virtual filesystem (`write_todos`, `ls`, `read_file`, `write_file`, `edit_file`, plus `glob`/`grep`/`delete`/`execute`) are injected automatically; `tools=` is only for your own tools. Invoke: `agent.invoke({\"messages\": [{\"role\": \"user\", \"content\": ...}]})`; final text at `result[\"messages\"][-1].content` (docs prefer `.content_blocks`), StateBackend files under `result[\"files\"]`. Seeding files on input uses `invoke({\"messages\":[...], \"files\": {\"notes.txt\": create_file_data(\"...\")}})` with `from deepagents.backends.utils import create_file_data` \u2014 raw string dicts are not supported.",
+  "key_deltas": [
+   "create_deep_agent(instructions=...) -> create_deep_agent(system_prompt=...): the prompt parameter was renamed to system_prompt (aligns with LangChain create_agent); `instructions=` is not in the current signature and would raise TypeError",
+   "Model must be given explicitly as a `provider:model` string (e.g. `model=\"anthropic:claude-sonnet-4-6\"`) or a BaseChatModel instance, resolved via init_chat_model \u2014 the quickstart passes an explicit model rather than relying on a hidden Sonnet default",
+   "Seeding the virtual filesystem on input: raw `{name: str}` dicts are no longer supported; wrap contents with `create_file_data()` from `deepagents.backends.utils`, e.g. `files={\"notes.txt\": create_file_data(\"...\")}`",
+   "Reading final output: docs use `result[\"messages\"][-1].content_blocks` (v1 typed content-blocks); `.content` still works",
+   "Pluggable backends now configured via `backend=` (StateBackend default/thread-scoped, FilesystemBackend, StoreBackend, CompositeBackend) \u2014 context for the current surface, not needed for the minimal example"
+  ],
+  "what_model_did": "Used the correct current entry point create_deep_agent with built-in planning and filesystem tools and correct invoke/result shape, but passed the agent prompt via the deprecated instructions= parameter and relied on a default model instead of a provider:model string.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C2",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "from deepagents import create_deep_agent. Signature uses system_prompt=, NOT instructions=: create_deep_agent(model=..., system_prompt=..., tools=[...]) with further params memory, skills, backend, permissions, subagents, middleware, interrupt_on, response_format, state_schema, context_schema, checkpointer, store. model is idiomatically a provider:model string resolved via init_chat_model (e.g. \"anthropic:claude-sonnet-4-6\", \"openai:gpt-5.5\") or a BaseChatModel instance. Built-in tools out of the box: write_todos (planning, statuses pending/in_progress/completed); virtual-filesystem tools ls, read_file, write_file, edit_file, delete, glob, grep (StateBackend by default); execute (sandbox backends only); task (spawns subagents; general-purpose subagent auto-added). Built-in capabilities beyond tools: skills (progressive disclosure via SKILL.md), memory (AGENTS.md via memory=), summarization + context offloading, automatic prompt caching for Anthropic/Bedrock models, human-in-the-loop (interrupt_on=), and declarative filesystem permissions. Subagent spec field is system_prompt (required), not prompt. Invoke with agent.invoke({\"messages\":[...]}); returns a compiled LangGraph graph.",
+  "key_deltas": [
+   "instructions= -> system_prompt=: the model's create_deep_agent(..., instructions=...) is the deprecated pre-1.0 param name; docs have zero instructions= and it would raise TypeError today",
+   "Built-in filesystem tools now also include delete, glob, grep (and execute for sandbox backends); the model's list (ls/read_file/write_file/edit_file) is outdated/incomplete",
+   "Idiomatic model config is a provider:model string (e.g. 'anthropic:claude-sonnet-4-6') resolved via init_chat_model; a model instance is also accepted; current model IDs are future/fictional (claude-sonnet-4-6, gpt-5.5) and must not be 'corrected'",
+   "Subagent spec key is system_prompt (required), not prompt",
+   "Out-of-the-box capabilities also include skills, memory (AGENTS.md), summarization/context offloading, automatic prompt caching, HITL (interrupt_on), and filesystem permissions - broader than the planning/filesystem/subagents the model enumerated"
+  ],
+  "what_model_did": "Used `create_deep_agent(tools=..., instructions=..., model=ChatAnthropic(...))` with `.invoke({\"messages\":...})`, and explained built-in tools as write_todos/ls/read_file/write_file/edit_file/task plus a Claude-Code-style base prompt.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C3",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "from deepagents.backends import FilesystemBackend; FilesystemBackend(root_dir=\"/abs/path\", virtual_mode=True) passed to create_deep_agent(backend=...). virtual_mode=True is REQUIRED to sandbox: it blocks \"..\", \"~\", and absolute paths outside root. Default virtual_mode=False provides NO security even with root_dir set. root_dir must be an absolute path. Recommended: wrap in CompositeBackend(default=StateBackend(), routes={\"/workspace/\": FilesystemBackend(root_dir=..., virtual_mode=True)}) so internal files (/large_tool_results/, /conversation_history/) stay ephemeral in state rather than hitting real disk.",
+  "key_deltas": [
+   "Sandboxing requires virtual_mode=True on FilesystemBackend \u2014 the model omitted it; default virtual_mode=False gives zero protection even with root_dir set, so the model's code does NOT sandbox despite its comment claiming '..' and absolute-path escapes are rejected",
+   "root_dir must be an absolute path",
+   "Idiomatic pattern wraps FilesystemBackend in CompositeBackend(default=StateBackend(), routes={...}) to keep internal /large_tool_results/ and /conversation_history/ off real disk",
+   "Import path deepagents.backends and kwarg root_dir and backend= wiring were correct (model hedged on these but got them right \u2014 the miss is virtual_mode)"
+  ],
+  "what_model_did": "Used FilesystemBackend(root_dir=...) from deepagents.backends passed via create_deep_agent(backend=...), but omitted virtual_mode=True and falsely claimed in a comment that path traversal / absolute-path escapes are rejected.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C4",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "medium",
+  "include": true,
+  "current_api": "from deepagents import create_deep_agent; from deepagents.backends import CompositeBackend, StateBackend, StoreBackend. Canonical long-term (cross-thread) memory: create_deep_agent(model=\"anthropic:claude-sonnet-4-6\", backend=CompositeBackend(default=StateBackend(), routes={\"/memories/\": StoreBackend(namespace=lambda rt: (rt.server_info.user.identity,))}), store=store). StateBackend is thread-scoped (persists across turns via checkpointer, NOT across threads); StoreBackend is cross-thread durable via a LangGraph BaseStore. Provide the store: dev = InMemoryStore() (langgraph.store.memory); prod = PostgresStore.from_conn_string(DB_URI) as a context manager + store.setup() (langgraph.store.postgres). On LangSmith Deployment omit store= (auto-provisioned). Backends are passed as instances (the backend=lambda rt: StateBackend(rt) factory form is deprecated as of deepagents 0.5.0). thread_id still goes in config={\"configurable\":{\"thread_id\":...}}.",
+  "key_deltas": [
+   "MISSED: StoreBackend should take a namespace factory \u2014 StoreBackend(namespace=lambda rt: (rt.server_info.user.identity,)); the namespace param becomes REQUIRED in v0.5.0 and without it all users of the same assistant share one storage bucket (data-isolation bug in multi-user). The model wrote StoreBackend() with no namespace.",
+   "CONFIRM (model got right but only medium-confident): the surface is real \u2014 from deepagents.backends import CompositeBackend, StateBackend, StoreBackend; long-term memory = CompositeBackend(default=StateBackend(), routes={'/memories/': StoreBackend()}) + store= passed through create_deep_agent.",
+   "Backends are passed as pre-constructed instances, not factory callables \u2014 backend=lambda rt: StateBackend(rt) is deprecated (0.5.0); backend=StateBackend() resolves runtime internally via get_config/get_store/get_runtime. Model already did this correctly.",
+   "On LangSmith Deployment, omit store= entirely \u2014 the platform auto-provisions a store; the model always passed store= explicitly.",
+   "Model IDs like anthropic:claude-sonnet-4-6 / google_genai:gemini-3.5-flash are the docs' real IDs and create_deep_agent examples always pass model= \u2014 the model omitted model= altogether."
+  ],
+  "what_model_did": "Used the canonical Deep Agents cross-thread memory pattern \u2014 CompositeBackend routing /memories/ to a StoreBackend with a StateBackend default, plus passing a LangGraph store to create_deep_agent \u2014 correctly and idiomatically, but omitted the namespace factory and the model= argument, and hedged at medium confidence on the surface details.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C5",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "`from deepagents import create_deep_agent`. Main instructions are passed via `system_prompt=` (NOT `instructions=`): `create_deep_agent(model=\"anthropic:claude-sonnet-4-6\", system_prompt=..., tools=[...], subagents=[...])`. Each subagent is a SubAgent-spec dict with REQUIRED keys `name`, `description`, `system_prompt` (NOT `prompt`), plus optional `tools`, `model` (a `provider:model` string or a `BaseChatModel` \u2014 model's hedge here is fine), `middleware`, `interrupt_on`, `skills`, `response_format`, `permissions`. `system_prompt` does not inherit from the main agent; `tools`/`model` inherit unless overridden. Delegation happens through the auto-added `task` tool; a `general-purpose` subagent is auto-added unless you supply one by that name. For custom graphs use `CompiledSubAgent(name, description, runnable=<compiled graph>)` (field is `runnable=`, NOT `graph=`), imported from `deepagents.middleware.subagents`. Invoke with `agent.invoke({\"messages\": [...]})` (correct as written).",
+  "key_deltas": [
+   "create_deep_agent main-prompt param: `instructions=` (old) -> `system_prompt=` (current); `instructions` is not a valid kwarg in current docs",
+   "Subagent dict required key: `prompt` (old) -> `system_prompt` (current); custom subagents must define their own `system_prompt` and it does not inherit from the main agent",
+   "CompiledSubAgent custom-graph field: `graph=<compiled_graph>` (model's guess) -> `runnable=<compiled LangGraph graph>`; import from deepagents.middleware.subagents",
+   "Everything else (subagents list-of-dicts, auto `task` tool, general-purpose auto-subagent, per-subagent `model` override accepting provider:model string or BaseChatModel, invoke shape) is current and idiomatic \u2014 do not re-teach"
+  ],
+  "what_model_did": "Used `create_deep_agent` with `subagents=[dict,...]` and an auto-added `task` tool for delegation \u2014 structurally correct \u2014 but confidently used the legacy deepagents naming: `instructions=` for the main prompt and `prompt` as the subagent dict key.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C6",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "\"Async subagents\" are a first-class preview feature: `deepagents` 0.5.0 (Python) / 1.9.0 (JS). Configure by passing a list of `AsyncSubAgent` specs \u2014 fields: `name` (req), `description` (req), `graph_id` (req; the graph/assistant ID on an Agent Protocol server, must match langgraph.json for LangGraph deployments), `url` (optional \u2014 omit for in-process ASGI transport, set for HTTP to a remote Agent Protocol server), `headers` (optional auth). When async subagents are configured, `create_deep_agent` auto-adds `AsyncSubAgentMiddleware` to the default stack, giving the supervisor FIVE tools the LLM calls like any other: `start_async_task` (launch, returns task_id immediately, non-blocking), `check_async_task` (status+result), `update_async_task` (STEER \u2014 new instructions to a running task via interrupt multitask strategy, same task_id), `cancel_async_task` (CANCEL \u2014 server-side runs.cancel()), `list_async_tasks` (all tasks with live status). Each subagent runs independently on its own thread on an Agent Protocol server (LangSmith Deployments or self-hosted); co-deploy via one langgraph.json (ASGI) or split via HTTP (auth from LANGSMITH_API_KEY/LANGGRAPH_API_KEY). Task metadata lives in a dedicated `async_tasks` state channel so it survives history compaction. Also: the supervisor prompt param is `system_prompt=`, not `instructions=`.",
+  "key_deltas": [
+   "\"Run long-running subagents in parallel with steer/cancel\" IS a first-class deepagents feature (Async subagents, preview in deepagents 0.5.0 / JS 1.9.0) \u2014 do NOT hand-roll it from LangGraph primitives.",
+   "Configure via a list of `AsyncSubAgent` specs (name, description, graph_id required; url + headers optional) pointing at an Agent Protocol server \u2014 NOT plain sync `subagents=` dicts run through the `task` tool.",
+   "Async subagents auto-add `AsyncSubAgentMiddleware`, exposing five supervisor tools: start_async_task / check_async_task / update_async_task / cancel_async_task / list_async_tasks.",
+   "Steering = the `update_async_task` tool (interrupt multitask strategy, same task_id) \u2014 NOT `agent.aupdate_state(...)` message injection or HITL `Command(resume=...)`.",
+   "Cancellation = the `cancel_async_task` tool (server-side runs.cancel()) \u2014 NOT cancelling an asyncio task that wraps `astream`.",
+   "Non-blocking parallelism = each subagent runs on its own thread on an Agent Protocol server and `start_async_task` returns a task_id immediately \u2014 NOT the model emitting several sync `task` calls in one turn.",
+   "Transport/topology: omit `url` for in-process ASGI (co-deploy all graphs in one langgraph.json); set `url` (+optional `headers`) for HTTP to a remote Agent Protocol server; auth via LANGSMITH_API_KEY / LANGGRAPH_API_KEY.",
+   "Task metadata is persisted in a dedicated `async_tasks` (Py) / `asyncTasks` (JS) state channel so IDs survive context/history compaction, not just in tool messages.",
+   "`create_deep_agent` prompt param is `system_prompt=`, not the outdated `instructions=`."
+  ],
+  "what_model_did": "Correctly recalled the base DeepAgents surface (create_deep_agent, subagent dicts, compiled-graph output) but, believing no first-class parallel/steer/cancel API exists, hand-rolled the entire async-subagent capability from LangGraph primitives (multiple sync `task` calls, asyncio task cancel, `aupdate_state`/`Command(resume)`) \u2014 all the wrong mechanisms.",
+  "self_confidence": "low",
+  "admitted_unknown": true
+ },
+ {
+  "id": "C7",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "In Deep Agents, context compression is built-in and automatic \u2014 every create_deep_agent(...) call already runs SummarizationMiddleware (default stack) AND filesystem offloading; you do NOT add middleware to enable either. Offloading: tool inputs/results exceeding ~20,000 tokens are moved to the backend filesystem and replaced with a file-path reference + first-10-lines preview, with older tool calls truncated as context crosses ~85% of the model window. Summarization: triggers at 85% of the model's max_input_tokens (fallback 170,000-token trigger / keep 6 messages), keeps ~10% of tokens as recent context, writes the original conversation to the filesystem, and falls back automatically on ContextOverflowError. Constructor kwarg is system_prompt=, not instructions=; model is a provider:model string (e.g. \"anthropic:claude-sonnet-4-6\"). To customize LangChain's SummarizationMiddleware use trigger=(\"tokens\",N)/keep=(\"messages\",N) ContextSize tuples, NOT max_tokens_before_summary/messages_to_keep. For on-demand compaction, pass create_summarization_tool_middleware via middleware= to add a compact_conversation tool.",
+  "key_deltas": [
+   "Both requested behaviors (auto-summarization + large-tool-result offloading) are built-in defaults of create_deep_agent \u2014 the idiomatic 'config' is default behavior plus optional tuning, NOT hand-adding SummarizationMiddleware/ContextEditingMiddleware",
+   "create_deep_agent instruction kwarg is system_prompt=, not instructions=",
+   "SummarizationMiddleware params: trigger=(\"tokens\",N)/keep=(\"messages\",N) tuples, not deprecated max_tokens_before_summary=/messages_to_keep=",
+   "Deep-agents offloading = filesystem offload of >20k-token tool inputs/results to a file reference + 10-line preview, not ClearToolUsesEdit placeholder replacement",
+   "Built-in summarization thresholds: 85% of max_input_tokens, keep ~10%, fallback 170k-token trigger / 6 messages, automatic ContextOverflowError fallback",
+   "Optional on-demand compaction via create_summarization_tool_middleware (adds compact_conversation tool) is the legitimate middleware= use for compaction",
+   "Model IDs are future/fictional (anthropic:claude-sonnet-4-6); provider:model string format is correct and must not be 'corrected'"
+  ],
+  "what_model_did": "Hand-assembled a middleware=[SummarizationMiddleware(...), ContextEditingMiddleware(edits=[ClearToolUsesEdit(...)])] stack on create_deep_agent to get summarization + large-tool-result offloading, using instructions= and deprecated SummarizationMiddleware params.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C8",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "Attach skills via a dedicated `skills` list[str] parameter on `create_deep_agent`, e.g. `create_deep_agent(tools=[...], system_prompt=..., skills=[\"pdf-fill\"], backend=FilesystemBackend(root_dir=\"skills\"))`. `from deepagents import create_deep_agent`; `from deepagents.backends import FilesystemBackend` (also StateBackend/StoreBackend/CompositeBackend). Each skill is a directory `skills/<name>/SKILL.md` with YAML frontmatter (`name` must equal the dir name, `description`; optional `license`/`compatibility`/`metadata`/`allowed-tools`) + markdown body, plus optional `scripts/`, `references/`, `assets/` (Agent Skills spec, progressive disclosure). Skill paths are forward-slash and relative to the backend root. `SkillsMiddleware` is auto-added to the default middleware stack when `skills=` is passed and handles discovery (level-1 name/description into system prompt, level-2 body read on invoke). With the default StateBackend, supply skill files at invoke via `invoke(files={...})` using `create_file_data()` from `deepagents.backends.utils`; only FilesystemBackend/StoreBackend load from disk/store. Invoke with `agent.invoke({\"messages\": [...]})`.",
+  "key_deltas": [
+   "Attach skills with the dedicated `skills=[paths]` param on create_deep_agent, NOT by pointing a FilesystemBackend root_dir at the skills folder \u2014 a backend alone loads zero skills. Docs: 'The SDK only loads the sources you pass in skills. It does not automatically scan.'",
+   "skills is list[str] of source paths, forward-slash, relative to the backend root (e.g. skills=[\"pdf-fill\"] or skills=[\"/skills/\"]); backend still stores/serves the files but is separate from the attach mechanism.",
+   "Use system_prompt= for agent instructions, not instructions= (instructions= does not appear anywhere in the current deepagents API).",
+   "SkillsMiddleware is inserted automatically into the default stack when skills= is passed (before FilesystemMiddleware) \u2014 you do not wire it manually.",
+   "With the default StateBackend, pass skill file contents at runtime via invoke(files={...}) using create_file_data() from deepagents.backends.utils; FilesystemBackend loads from disk relative to root_dir.",
+   "Skill DEFINITION format (SKILL.md + YAML frontmatter name/description, scripts/references/assets, progressive disclosure) the model already had correct \u2014 exclude that part."
+  ],
+  "what_model_did": "Defined a skill as a folder with SKILL.md (YAML frontmatter + body + scripts/) correctly, but attached it by rooting a FilesystemBackend at the skills directory instead of passing the required skills=[...] param, and used the outdated instructions= arg.",
+  "self_confidence": "low",
+  "admitted_unknown": true
+ },
+ {
+  "id": "C9",
+  "fw": "DeepAgents",
+  "verdict": "outdated_confident",
+  "value": "high",
+  "include": true,
+  "current_api": "deepagents human-in-the-loop uses the `interrupt_on` kwarg on `create_deep_agent` (NOT `interrupt_config`): `interrupt_on={\"send_email\": True}` or `{\"send_email\": {\"allowed_decisions\": [\"approve\", \"edit\", \"reject\", \"respond\"]}}` (True=all defaults, False=off; optional `when` predicate on `ToolCallRequest` for conditional interrupts, langchain>=1.3.3). A checkpointer is required (`from langgraph.checkpoint.memory import InMemorySaver`, passed as `checkpointer=` \u2014 that part the model got right). Invoke with `version=\"v2\"` and `config={\"configurable\":{\"thread_id\": ...}}`. Detect the pause via the Python attribute `result.interrupts` (JS: `result.__interrupt__`); `result.interrupts[0].value` is `{\"action_requests\":[...], \"review_configs\":[...]}`. Resume with `agent.invoke(Command(resume={\"decisions\":[{\"type\":\"approve\"}]}), config=config, version=\"v2\")`. Decision types are approve/edit/reject/respond. Edit shape: `{\"type\":\"edit\",\"edited_action\":{\"name\": tool_name, \"args\": {...}}}`. Reject shape: `{\"type\":\"reject\",\"message\":\"...\"}`. Final message via `result.value[\"messages\"][-1].content` under v2.",
+  "key_deltas": [
+   "Parameter is `interrupt_on`, NOT `interrupt_config`",
+   "Config value is an InterruptOnConfig with `allowed_decisions: [\"approve\",\"edit\",\"reject\",\"respond\"]` (or True/False), NOT boolean flags `allow_accept/allow_edit/allow_respond/allow_ignore`",
+   "Decision type strings are approve/edit/reject/respond, NOT accept/response/ignore (there is no `ignore`)",
+   "Resume payload is `Command(resume={\"decisions\": [...]})` (dict with a `decisions` key), NOT a bare list `Command(resume=[...])`",
+   "Edit decision is `{\"type\":\"edit\",\"edited_action\":{\"name\":...,\"args\":{...}}}`, NOT `{\"type\":\"edit\",\"args\":{\"action\":...,\"args\":...}}`",
+   "Reject/deny uses `{\"type\":\"reject\",\"message\":\"...\"}`, NOT `{\"type\":\"response\",\"args\":\"...\"}`",
+   "Python detects the pause via the `result.interrupts` attribute (JS: `result.__interrupt__`); interrupt value is `{\"action_requests\":[...],\"review_configs\":[...]}`",
+   "Both invoke calls need `version=\"v2\"` in the Python idiom",
+   "Under v2, final output is `result.value[\"messages\"][-1].content`, NOT `result[\"messages\"][...]`",
+   "checkpointer as a direct kwarg on create_deep_agent is correct (confirmed by docs)"
+  ],
+  "what_model_did": "Configured deepagents HITL via a made-up `interrupt_config` kwarg using LangGraph's old `HumanInterruptConfig` boolean flags (`allow_accept/allow_edit/allow_respond/allow_ignore`) and resumed with `Command(resume=[{\"type\":\"accept\"}])`, detecting the pause via `result[\"__interrupt__\"]`.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C10",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "Permissions are a LIST of `FilesystemPermission` rules passed to `create_deep_agent(permissions=[...])`, NOT a dict on the backend. Import: `from deepagents import create_deep_agent, FilesystemPermission`. Each rule: `FilesystemPermission(operations=[\"read\"|\"write\"], paths=[\"/glob/**\"], mode=\"allow\"|\"deny\"|\"interrupt\")`. `operations` \"read\" covers ls/read_file/glob/grep; \"write\" covers write_file/edit_file/delete. `paths` are glob patterns (support `**` recursive and `{a,b}` alternation). Evaluation is first-match-wins; if no rule matches the op is ALLOWED (permissive default), so place specific rules before broad ones. Read-only path = deny write on it (e.g. FilesystemPermission(operations=[\"write\"], paths=[\"/config/**\"], mode=\"deny\")); fully blocked path = deny both read and write (there is no \"none\" level). Example: `create_deep_agent(model=..., backend=FilesystemBackend(root_dir=\"/workspace\"), permissions=[FilesystemPermission(operations=[\"read\",\"write\"], paths=[\"/workspace/**\"], mode=\"allow\"), FilesystemPermission(operations=[\"write\"], paths=[\"/workspace/config/**\"], mode=\"deny\"), FilesystemPermission(operations=[\"read\",\"write\"], paths=[\"/workspace/secrets/**\"], mode=\"deny\")])`. mode=\"interrupt\" pauses for HITL approval (deepagents>=0.6.8). Permissions require deepagents>=0.5.2, apply only to built-in FS tools (not custom/MCP tools, not sandbox backends). Subagents inherit parent rules; permissions=[] means unrestricted.",
+  "key_deltas": [
+   "permissions live on create_deep_agent(permissions=[...]), NOT on FilesystemBackend(permissions=...) \u2014 the backend takes no permissions arg",
+   "permissions is a LIST of FilesystemPermission rule objects, not a {path: level} dict",
+   "FilesystemPermission is a top-level deepagents export: `from deepagents import create_deep_agent, FilesystemPermission`",
+   "rule fields are operations=[\"read\"|\"write\"], paths=[globs], mode=\"allow\"|\"deny\"|\"interrupt\" \u2014 there are NO per-path level strings like \"write\"/\"read\"/\"none\"",
+   "paths are GLOB patterns (**, {a,b}), not literal path prefixes; evaluation is first-match-wins with permissive (allow) default when nothing matches",
+   "read-only = a deny rule on operations=[\"write\"] for that path; blocked = deny on both read and write \u2014 there is no \"none\"/\"blocked\" level",
+   "operations map: \"read\" = ls/read_file/glob/grep, \"write\" = write_file/edit_file/delete",
+   "mode=\"interrupt\" pauses for human approval (deepagents>=0.6.8); permissions require deepagents>=0.5.2 and don't apply to custom/MCP tools or sandbox backends; subagents inherit rules, permissions=[] = unrestricted"
+  ],
+  "what_model_did": "Guessed a made-up `FilesystemBackend(permissions={path: \"write\"/\"read\"/\"none\"})` dict-on-the-backend API; correctly recovered the surrounding deepagents scaffolding (create_deep_agent entrypoint, FilesystemBackend(root_dir=...), backend= arg, invoke shape, FS tools enforce permissions) but got the permissions configuration itself entirely wrong, while explicitly flagging it as an unverified guess.",
+  "self_confidence": "low",
+  "admitted_unknown": true
+ },
+ {
+  "id": "C11",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "high",
+  "include": true,
+  "current_api": "The intended DeepAgents mechanism is **Harness Profiles** (Beta): build a `HarnessProfile(base_system_prompt=, system_prompt_suffix=, tool_description_overrides=, excluded_tools=, excluded_middleware=, extra_middleware=, general_purpose_subagent=)` and register it with `register_harness_profile(\"anthropic\", ...)` and `register_harness_profile(\"openai\", ...)` \u2014 keyed by bare provider name or a `provider:model` string (provider- and model-level keys merge). Deep Agents then applies the matching profile automatically whenever a model of that provider is selected, WITHOUT changing the `create_deep_agent` call site; it also ships built-in profiles for OpenAI and Anthropic. A companion `ProviderProfile` + `register_provider_profile` (Python-only) packages `init_chat_model` construction kwargs (`init_kwargs`, `pre_init`, `init_kwargs_factory`). YAML/JSON via `HarnessProfileConfig`; JS uses `HarnessProfileOptions` / `registerHarnessProfile`. Also: the caller-supplied prompt parameter on `create_deep_agent` is `system_prompt=`, not `instructions=`.",
+  "key_deltas": [
+   "Provider-based harness tuning has a first-class mechanism: Harness Profiles (`HarnessProfile` + `register_harness_profile(key, profile)`), keyed by provider (`\"anthropic\"`/`\"openai\"`) or `provider:model` \u2014 the model hand-rolled a config dict and never mentioned this NOVEL feature.",
+   "`create_deep_agent` prompt param is `system_prompt=`, NOT the deprecated `instructions=` the model confidently used.",
+   "HarnessProfile fields: `base_system_prompt`, `system_prompt_suffix`, `tool_description_overrides`, `excluded_tools`, `excluded_middleware`, `extra_middleware`, `general_purpose_subagent`; provider-level and model-level entries merge at resolution.",
+   "Deep Agents already ships built-in harness profiles for OpenAI and Anthropic, so some provider tuning is automatic on model selection.",
+   "Companion `ProviderProfile` / `register_provider_profile` (Python-only) carries `init_chat_model` construction kwargs (`init_kwargs`/`pre_init`/`init_kwargs_factory`); JS exposes `HarnessProfileOptions` / `registerHarnessProfile` and lacks provider profiles."
+  ],
+  "what_model_did": "Hand-rolled a per-provider Python dict (`HARNESS`) that selects model/model_kwargs/instructions/tools by provider and feeds them into `create_deep_agent(tools=, instructions=, model=)`, resolving models via `init_chat_model` colon form.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C12",
+  "fw": "DeepAgents",
+  "verdict": "outdated_confident",
+  "value": "high",
+  "include": true,
+  "current_api": "In Deep Agents, sandboxes are BACKENDS, not tools. You create a provider sandbox and wrap it, then pass it via `backend=` to `create_deep_agent`, which auto-adds the `execute` tool (plus ls/read_file/write_file/edit_file/glob/grep) because the backend implements `SandboxBackendProtocol`. Example (zero-setup default): `from deepagents import create_deep_agent`; `from deepagents.backends.langsmith import LangSmithSandbox`; `from langsmith.sandbox import SandboxClient`; `client = SandboxClient(); ls = client.create_sandbox(); backend = LangSmithSandbox(sandbox=ls)`; then `agent = create_deep_agent(model=ChatAnthropic(model=\\\"claude-sonnet-4-6\\\"), system_prompt=\\\"...\\\", backend=backend)`. Other backends: `langchain_daytona.DaytonaSandbox`, `langchain_e2b.E2BSandbox`, `langchain_modal.ModalSandbox`, `langchain_runloop.RunloopSandbox`, `langchain_vercel_sandbox.VercelSandbox`, `langchain_agentcore_codeinterpreter.AgentCoreSandbox`, `langchain_nvidia_openshell.OpenShellSandbox`, each wrapping the provider SDK's sandbox object; `LocalShellBackend` for local dev. Seed/retrieve data via `backend.upload_files([(path, bytes)])` / `backend.download_files([paths])`. Invoke with `agent.invoke({\\\"messages\\\":[{\\\"role\\\":\\\"user\\\",\\\"content\\\":...}]})`; read `result[\\\"messages\\\"][-1].content` / `.content_blocks`. Delete the sandbox in a finally block. The param is `system_prompt=`, NOT `instructions=`.",
+  "key_deltas": [
+   "`langchain_sandbox.PyodideSandboxTool` (Pyodide-in-Deno) is NOT the current mechanism \u2014 it appears nowhere in the docs; replace with a Deep Agents sandbox BACKEND",
+   "Sandbox is supplied via `backend=` on `create_deep_agent`, NOT as a tool in `tools=[...]`",
+   "The `execute` tool (shell/Python) is auto-provided by any backend implementing `SandboxBackendProtocol`; you never construct or add a sandbox tool yourself",
+   "`create_deep_agent(system_prompt=...)` is correct; `instructions=` does not exist (the model had this exactly backwards)",
+   "Concrete backends: `LangSmithSandbox` (deepagents.backends.langsmith + `langsmith.sandbox.SandboxClient`), plus Daytona/E2B/Modal/Runloop/Vercel/AgentCore/OpenShell via `langchain-<provider>` packages wrapping the provider SDK sandbox; `LocalShellBackend` for local dev",
+   "Move files across the boundary with `backend.upload_files(...)` / `backend.download_files(...)` (bytes), not agent tools",
+   "Sandbox lifecycle is explicit: create via provider SDK, wrap as backend, delete in a finally block; thread-scoped vs assistant-scoped",
+   "Interpreters (`CodeInterpreterMiddleware`, QuickJS via `deepagents[quickjs]`, passed through `middleware=`) are a DISTINCT in-loop JS orchestration feature \u2014 not the tool for pandas/numpy data analysis; use a sandbox backend for that",
+   "Model IDs like `claude-sonnet-4-6` are real in this ecosystem and should not be 'corrected'"
+  ],
+  "what_model_did": "Configured code execution by constructing `langchain_sandbox.PyodideSandboxTool(stateful=True, allow_net=True)` and passing it into `create_deep_agent(tools=[...], instructions=...)` as the sandbox mechanism.",
+  "self_confidence": "medium",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C13",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "medium",
+  "include": true,
+  "current_api": "Per deepagents/going-to-production.mdx: the recommended path is \"Managed Deep Agents\" \u2014 a CLI-first hosted runtime in LangSmith (private preview) for creating/running/operating deep agents; for custom application code, routes, or advanced auth, use a \"LangSmith Deployment\" directly (docs/link `/langsmith/deployment`). Both provision threads, runs, a store, and a checkpointer automatically. The old \"LangGraph Platform / LangGraph Cloud\" branding is now \"LangSmith Deployments.\" Required config: `langgraph.json` at repo root with `dependencies` (`[\".\"]` reads requirements.txt/pyproject.toml/package.json), `graphs` (`{\"agent\": \"./agent.py:agent\"}`), and `env` (`.env`); required for both `langgraph dev` and production. Self-host via `langgraph build` \u2192 Docker; managed deploy via `langgraph deploy`. Invoke with `from langgraph_sdk import get_client; client = get_client(url=..., api_key=...); thread = await client.threads.create(); async for chunk in client.runs.stream(thread[\"thread_id\"], \"agent\", input={\"messages\":[...]}, context={\"user_id\":...}, stream_mode=\"updates\")`. Every production invocation carries both `thread_id` (conversation/checkpoints) and `context` (per-run data via `context=`, defined by `context_schema` \u2014 NOT config.configurable). The deployment injects the checkpointer/store, so don't pass your own.",
+  "key_deltas": [
+   "Recommended-path branding is now 'LangSmith Deployments', not 'LangGraph Platform / LangGraph Server'; the specifically-recommended product is 'Managed Deep Agents' (LangSmith CLI-first hosted runtime, private preview), with a direct 'LangSmith Deployment' as the fallback for custom code \u2014 the model used the old name and missed Managed Deep Agents.",
+   "Production invocation passes per-run data via `context=` (defined by `context_schema`), independent of `thread_id`; the doc stresses passing both, and the model's SDK call omitted `context=`.",
+   "Managed deploy uses the `langgraph deploy` CLI command (doc line 552); the model was uncertain about this.",
+   "EXCLUDE as already-known/correct: the `langgraph.json` shape (dependencies/graphs/env), `langgraph dev`/`langgraph build`, and the `langgraph_sdk` get_client/threads.create/runs.stream API \u2014 the model reproduced these accurately and matching the current docs."
+  ],
+  "what_model_did": "Correctly identified langgraph.json + langgraph-cli + langgraph_sdk (get_client/threads.create/runs.stream) as the deployment/streaming/thread mechanism, but framed the recommended path as the stale \"LangGraph Platform / LangGraph Server\" and missed the currently-recommended \"Managed Deep Agents\" product.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ },
+ {
+  "id": "C14",
+  "fw": "DeepAgents",
+  "verdict": "partial",
+  "value": "medium",
+  "include": true,
+  "current_api": "from deepagents import create_deep_agent; from langchain_mcp_adapters.client import MultiServerMCPClient. Build MultiServerMCPClient({\"math\": {\"transport\": \"stdio\", \"command\": \"python\", \"args\": [...]}, \"weather\": {\"transport\": \"http\", \"url\": \".../mcp\"}}), then tools = await client.get_tools(). Create the agent with create_deep_agent(model=\"claude-sonnet-4-6\", tools=tools, system_prompt=\"...\"). Drive with await agent.ainvoke({\"messages\": [{\"role\": \"user\", \"content\": \"...\"}]}). The prompt argument is system_prompt=, NOT instructions=. The current HTTP transport value is \"http\" (aka streamable-http); \"streamable_http\" is still accepted as an alias but is no longer the documented idiom.",
+  "key_deltas": [
+   "create_deep_agent uses system_prompt= for custom instructions, NOT instructions= (the pre-1.0 deepagents param name the model used) \u2014 would raise TypeError under the documented signature",
+   "MCP HTTP transport is now written transport: \"http\" (streamable-http); model used the older transport: \"streamable_http\" which is only an alias, not the current idiomatic value",
+   "Correct current idiom already used by the model (worth confirming, not a delta): await client.get_tools() returns LangChain tools; the old `async with client as session` context-manager pattern is not needed"
+  ],
+  "what_model_did": "Loaded MCP tools via MultiServerMCPClient(...).get_tools() and passed them into create_deep_agent, then drove it with ainvoke \u2014 the correct current integration shape, but used the deprecated instructions= param and the older streamable_http transport spelling.",
+  "self_confidence": "high",
+  "admitted_unknown": false
+ }
+]
