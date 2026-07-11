@@ -31,12 +31,18 @@ Distilled volume estimate: **~18–30k tokens**, Deep-Agents-dominated (~15–20
 
 **Structure finding (proposed, confirm after probe):** split per-framework — `deepagents` / `langchain-middleware` / `langgraph` — plus a shared **idioms & import-map** file every branch links. Branching is clean (a task opens exactly one framework; Deep Agents uses the others as a black box). A monolith is wrong here. Deep Agents is the largest branch and may warrant subtopic sub-files. Secondary axis (python vs js) is moot given D1 (Python only).
 
-## Open decisions (to resolve this session)
+| D11 | Skill identity | **DeepAgents-centric + thin LC/LG deltas** | Probe evidence: Claude already writes modern LangChain-core + LangGraph-runtime correctly (7/26 "correct"). The real gap is DeepAgents (14 topics) + ~5 LC/LG deltas. One skill, not multiple (single trigger context). |
+| D12 | Round-2 probe | **~12 targeted tasks on under-sampled areas** | Round-1 was thin on LangChain built-in middleware (only summarization probed), LangGraph persistence/durability deltas, and DeepAgents micro-features (rubric/dynamic-subagents/interpreters). Measure before finalizing include list. |
 
-- Probe task blueprint (categories + weighting) — pending user approval.
-- Skill structure: single skill vs. split into `references/` — decide after evidence (survey + probe) reveals whether the model branches per-framework on a given task.
-- Content organization within the skill.
-- Maintenance/refresh strategy (framework changes constantly; how does the skill stay current?).
+## Probe result (axis 2, round 1) — recorded
+
+Full evidence: `research/probe-results.md`. 26 blind tasks → doc-armed grading. **7 exclude** (create_agent, custom middleware, structured output, ToolRuntime, context API, LangGraph runtime context, functional API — Claude already correct), **19 include** (all 14 DeepAgents + A4, A7, B2, B3, B5). **Dominant cross-cutting gotcha:** `create_deep_agent(instructions=)` → `system_prompt=` (wrong in ~every DeepAgents task) — belongs in SKILL.md body. Plus: model IDs in docs are real/future (don't "correct"); pass `model=` explicitly.
+
+## Open decisions (resolve after round-2 probe)
+
+- Round-2 include list (pending round-2 completion).
+- Skill file structure: SKILL.md + `references/` layout, and whether DeepAgents is one file or sub-split. Evidence leans: SKILL.md (mental model + cross-cutting gotchas + routing) + `references/deepagents.md` (bulk) + `references/langchain-langgraph.md` (thin deltas). Finalize post-round-2.
+- Frontmatter: `description` (trigger wording + near-misses), `user-invocable: false` (background knowledge, not a command), `disable-model-invocation` (likely no).
 - Validation scenarios (I5) — the before/after probe is the spine; any additions?
 
 ## Method note
