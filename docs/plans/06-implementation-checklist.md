@@ -9,7 +9,7 @@ An ordered, self-contained step list for the session that builds the skill from 
 
 ## Build steps
 
-1. **SKILL.md** → per `02`. Reuse the existing `.claude/skills/LangChain/` directory (do not rename it). Paste the frontmatter and body, then verify the three cross-cutting gotchas against the cited docs. Verify: file exists, YAML is well-formed.
+1. **SKILL.md** → per `02`. Use `.claude/skills/langchain/` so the directory and frontmatter name satisfy the public plugin identifier contract. Paste the frontmatter and body, then verify the three cross-cutting gotchas against the cited docs. Verify: file exists, YAML is well-formed.
 
 2. **references/deepagents.md** → per `03`, all 16 topics in the recommended order. For each topic, verify the `current_api` against the cited `.mdx` file before writing it as fact — correct anything the docs contradict (the plan flags several "verify import path" spots). Write in conviction style: reason-first, teach only the delta, omit the "do not re-teach" parts. Add the version stamp at the top.
 

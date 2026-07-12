@@ -1,0 +1,37 @@
+{
+  "name": "skills-for-langchain",
+  "owner": {
+    "name": "Seongjin (tjdwls101010)",
+    "email": "chunghun1@naver.com"
+  },
+  "description": "Evidence-built Claude Code guidance for current LangChain, LangGraph, and Deep Agents Python development.",
+  "plugins": [
+    {
+      "name": "skills-for-langchain",
+      "displayName": "Skills for LangChain",
+      "source": "./plugins/skills-for-langchain",
+      "description": "Current Python APIs and high-value gotchas for LangChain 1.x, LangGraph 1.x, and Deep Agents.",
+      "author": {
+        "name": "Seongjin (tjdwls101010)"
+      },
+      "homepage": "https://github.com/tjdwls101010/Skills-for-Langchain",
+      "repository": "https://github.com/tjdwls101010/Skills-for-Langchain",
+      "license": "MIT",
+      "keywords": [
+        "langchain",
+        "langgraph",
+        "deep-agents",
+        "python",
+        "agent-development"
+      ],
+      "category": "development",
+      "tags": [
+        "ai-agents",
+        "middleware",
+        "subagents",
+        "human-in-the-loop"
+      ],
+      "strict": true
+    }
+  ]
+}

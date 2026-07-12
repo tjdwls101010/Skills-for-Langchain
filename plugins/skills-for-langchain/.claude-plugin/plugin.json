@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "skills-for-langchain",
+  "displayName": "Skills for LangChain",
+  "version": "1.0.0",
+  "description": "Evidence-built Python API guidance for LangChain 1.x, LangGraph 1.x, and the Deep Agents SDK.",
+  "author": {
+    "name": "Seongjin (tjdwls101010)",
+    "email": "chunghun1@naver.com",
+    "url": "https://github.com/tjdwls101010"
+  },
+  "homepage": "https://github.com/tjdwls101010/Skills-for-Langchain",
+  "repository": "https://github.com/tjdwls101010/Skills-for-Langchain",
+  "license": "MIT",
+  "keywords": [
+    "langchain",
+    "langgraph",
+    "deep-agents",
+    "python",
+    "agent-development",
+    "claude-code"
+  ]
+}

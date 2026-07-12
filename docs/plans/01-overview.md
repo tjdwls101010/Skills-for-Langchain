@@ -4,7 +4,7 @@ Read this first. It tells the implementation session what is being built, why th
 
 ## What we are building
 
-A single Claude Code skill at `.claude/skills/LangChain/` that carries **only what Claude (Opus 4.8, January-2026 knowledge cutoff) does not already know — or confidently gets wrong — about the current LangChain ecosystem** (LangChain 1.x, LangGraph 1.x, and the Deep Agents SDK), as documented in the April-2026 doc snapshot. It is a background knowledge skill: it auto-triggers when Claude works on LangChain-ecosystem code and supplies the specific deltas that keep Claude from generating deprecated or hallucinated APIs. It is not an action skill and defines no commands.
+A single Claude Code skill at `.claude/skills/langchain/` that carries **only what Claude (Opus 4.8, January-2026 knowledge cutoff) does not already know — or confidently gets wrong — about the current LangChain ecosystem** (LangChain 1.x, LangGraph 1.x, and the Deep Agents SDK), as documented in the April-2026 doc snapshot. It is a background knowledge skill: it auto-triggers when Claude works on LangChain-ecosystem code and supplies the specific deltas that keep Claude from generating deprecated or hallucinated APIs. It is not an action skill and defines no commands.
 
 The skill's center of gravity is **Deep Agents**, which the model has essentially no correct priors for. LangChain-core and LangGraph appear only as a thin set of measured deltas, because the model already writes most modern LangChain-core and LangGraph-runtime code correctly.
 
@@ -33,7 +33,7 @@ The exact per-topic deltas, with the wrong prior each corrects and the current c
 One skill, three files (rationale in `00-decision-log.md` D13):
 
 ```
-.claude/skills/LangChain/
+.claude/skills/langchain/
 ├── SKILL.md                          # trigger; 3-tier mental model; cross-cutting gotchas; routing to the two references
 └── references/
     ├── deepagents.md                 # the bulk: 16 Deep Agents topics

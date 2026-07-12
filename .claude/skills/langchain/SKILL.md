@@ -1,5 +1,5 @@
 ---
-name: LangChain
+name: langchain
 description: >-
   Current April-2026 Python APIs and gotchas for the LangChain ecosystem: LangChain 1.x, LangGraph 1.x, and the Deep Agents SDK (`deepagents`). Load whenever writing, reviewing, or editing Python that imports LangChain, LangGraph, or Deep Agents; calls `create_agent` or `create_deep_agent`; or works with agent middleware, subagents, backends, long-term memory, human-in-the-loop, permissions, streaming, structured output, or agent deployment, even when the user does not name a version. Load especially for Deep Agents, where older model knowledge is incomplete and confidently wrong. This skill carries recent deltas such as `create_deep_agent(system_prompt=...)` instead of `instructions=`, `create_agent` instead of `create_react_agent`, and the current agent-as-tool pattern. Do not use for CrewAI, AutoGen, LlamaIndex, or raw OpenAI or Anthropic SDK work unless it is explicitly bridged through LangChain.
 ---

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage and troubleshooting
+    url: https://github.com/tjdwls101010/Skills-for-Langchain/blob/main/SUPPORT.md
+    about: Read support guidance before filing a usage question.
+  - name: Private security report
+    url: https://github.com/tjdwls101010/Skills-for-Langchain/security/advisories/new
+    about: Report vulnerabilities privately instead of opening a public issue.

@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose a measured coverage improvement or project capability.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What task produces incomplete or outdated behavior today?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include a reproducible prompt and current official documentation when the request changes API guidance.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Explain whether this belongs in SKILL.md, an existing reference, a new reference, or project documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This request is for Python LangChain, LangGraph, Deep Agents, or this Claude Code plugin.
+          required: true
+        - label: The proposal avoids restating broad documentation without measured need.
+          required: true

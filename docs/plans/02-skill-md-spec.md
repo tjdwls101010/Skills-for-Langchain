@@ -1,16 +1,16 @@
 # 02 — SKILL.md specification
 
-This specifies the top-level `.claude/skills/LangChain/SKILL.md` exactly: the directory name, the frontmatter, and the body. The body is deliberately short — it loads on every trigger, so it holds only the always-applicable material (mental model, cross-cutting gotchas, routing) and pushes the bulk into the two reference files. Everything below is close to final copy; the implementation session should paste it, then verify each technical claim against the cited docs before shipping.
+This specifies the top-level `.claude/skills/langchain/SKILL.md` exactly: the directory name, the frontmatter, and the body. The body is deliberately short — it loads on every trigger, so it holds only the always-applicable material (mental model, cross-cutting gotchas, routing) and pushes the bulk into the two reference files. Everything below is close to final copy; the implementation session should paste it, then verify each technical claim against the cited docs before shipping.
 
 ## Directory name
 
-Use `.claude/skills/LangChain/` (capitalized as the framework capitalizes itself). An empty `.claude/skills/LangChain/` directory already exists on disk from a prior session — reuse it. The directory name is the invocation contract (`/LangChain`), so do not rename it to `skill1`/`langchain-stuff`/etc. The user's request wrote it "Langchain"; "LangChain" is the correct casing and is what the existing directory already uses.
+Use `.claude/skills/langchain/`. The lowercase directory and frontmatter name follow the public Claude Code plugin contract for skill identifiers; keep the framework's product spelling as “LangChain” in prose and display names. The standalone invocation is `/langchain`, and the marketplace-installed invocation is `/skills-for-langchain:langchain`.
 
 ## Frontmatter
 
 ```yaml
 ---
-name: LangChain
+name: langchain
 description: >-
   Current (2026) APIs and gotchas for the LangChain ecosystem — LangChain 1.x,
   LangGraph 1.x, and the Deep Agents SDK (deepagents). Load whenever writing or
@@ -32,11 +32,11 @@ description: >-
 Frontmatter judgment calls, with reasons:
 
 - **`description` is the entire trigger signal** and is the most important thing in this file. It is written to over-trigger deliberately, because the cost asymmetry is steep: a needless load costs a little context, but a missed load means the model writes deprecated code with full confidence and never knows the skill existed. It names the underlying intent ("building or configuring agents"), lists concrete surface triggers (the import names and function names), flags the Deep Agents priority, states what the skill actually contains (deltas, so the model knows this is a correction resource), and draws the near-miss boundary (other frameworks) so it does not steal triggers from unrelated agent work. When the docs are refreshed, re-check this line first — new top-level API names should be added to the trigger list.
-- **Do not set `user-invocable: false`.** Leaving it invocable lets the user type `/LangChain` to force-load the reference before starting a session, which is a reasonable convenience; the primary mechanism is still auto-trigger via `description`.
+- **Do not set `user-invocable: false`.** Leaving it invocable lets the user type `/langchain` for the standalone project skill or `/skills-for-langchain:langchain` for the installed plugin, which is a reasonable convenience; the primary mechanism is still auto-trigger via `description`.
 - **Do not set `disable-model-invocation`.** Auto-triggering is the whole point of this skill.
 - **No `allowed-tools`, no `hooks`, no `context: fork`.** This is reference knowledge, not a task with a verb, so none of those apply.
 
-Note the mechanical trap the validator guards against: if this YAML fails to parse, the skill still loads on `/LangChain` but silently stops auto-triggering (empty metadata, no `description` to match). Run `validate_harness.py` after writing it.
+Note the mechanical trap the validator guards against: if this YAML fails to parse, the skill can still be invoked explicitly but silently stops auto-triggering because there is no usable `description`. Run both the harness validator and `claude plugin validate . --strict` after writing it.
 
 ## Body
 

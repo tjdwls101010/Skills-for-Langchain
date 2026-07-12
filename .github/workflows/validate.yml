@@ -1,0 +1,41 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate evidence and release metadata
+        run: python3 scripts/validate_evidence.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Claude Code validator
+        run: npm install --global @anthropic-ai/claude-code@2.1.207
+
+      - name: Validate Claude marketplace
+        run: claude plugin validate .claude-plugin/marketplace.json --strict
+
+      - name: Validate Claude plugin
+        run: claude plugin validate plugins/skills-for-langchain/.claude-plugin/plugin.json --strict
+
+      - name: Check whitespace
+        run: git show --check --oneline --no-renames HEAD

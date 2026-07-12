@@ -3,9 +3,9 @@
   "recorded_on": "2026-07-12",
   "method": "codex_subagent_cross_review",
   "generated_file_sha256": {
-    ".claude/skills/LangChain/SKILL.md": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
-    ".claude/skills/LangChain/references/deepagents.md": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043",
-    ".claude/skills/LangChain/references/langchain-langgraph.md": "c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca"
+    ".claude/skills/langchain/SKILL.md": "d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd",
+    ".claude/skills/langchain/references/deepagents.md": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043",
+    ".claude/skills/langchain/references/langchain-langgraph.md": "c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca"
   },
   "attempts": [
     {
@@ -18,7 +18,7 @@
         "Compiled agent graph.invoke"
       ],
       "explanation": "The @dynamic_prompt decorator defines custom middleware that runs before every model call. It reads the current agent state from request.state, returns a replacement system prompt derived from the message count, and is attached by passing the decorated function in create_agent(middleware=[...]).",
-      "skill_sha256": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+      "skill_sha256": "d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd",
       "reference_sha256": "c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca"
     },
     {
@@ -36,7 +36,7 @@
         "list_async_tasks"
       ],
       "explanation": "Each AsyncSubAgent names an independently registered Agent Protocol graph or assistant. Passing these typed specs through subagents= makes create_deep_agent detect them and attach AsyncSubAgentMiddleware automatically; it should not be constructed manually. The middleware exposes five model-facing tools: start returns a task ID immediately, allowing several remote tasks to overlap; update steers a running task using that ID; cancel performs server-side cancellation; and check/list inspect progress. Reusing the coordinator thread preserves the dedicated async_tasks state channel across turns and message compaction. This example uses HTTP transport to a remote Agent Protocol server; when all graphs are co-deployed in one langgraph.json, url and headers can be omitted for the recommended in-process ASGI transport.",
-      "skill_sha256": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+      "skill_sha256": "d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd",
       "reference_sha256": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043"
     },
     {
@@ -49,7 +49,7 @@
         "agent.invoke(...)"
       ],
       "explanation": "Each reusable capability is a child directory containing a SKILL.md. Its frontmatter name must match that directory name, so release-notes/SKILL.md declares name: release-notes. The skills argument receives the parent source directory (\"skills\"), not \"skills/release-notes\"; paths are relative to the backend root and use forward slashes. Supplying skills= adds SkillsMiddleware, which reads skill metadata at startup and loads the full instructions only when the agent invokes the relevant skill. The filesystem backend is explicitly rooted and uses virtual_mode=True for path protection.",
-      "skill_sha256": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+      "skill_sha256": "d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd",
       "reference_sha256": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043"
     }
   ],
@@ -73,7 +73,7 @@
         ".tmp/docs_langchain/langchain/agents.mdx",
         ".tmp/docs_langchain/langchain/quickstart.mdx"
       ],
-      "attempt_sha256": "78dc722fe471d4b132c09fdc452b15725a421b6d46080225ecd8257383c54816"
+      "attempt_sha256": "d90edb281a05d5bbbe14351aefeb4ebd9ccef8371e6e4517e2c667399ea2c6ee"
     },
     {
       "id": "A2",
@@ -90,20 +90,20 @@
         ".tmp/docs_langchain/langchain/agents.mdx",
         ".tmp/docs_langchain/langchain/mcp.mdx"
       ],
-      "attempt_sha256": "78dc722fe471d4b132c09fdc452b15725a421b6d46080225ecd8257383c54816"
+      "attempt_sha256": "d90edb281a05d5bbbe14351aefeb4ebd9ccef8371e6e4517e2c667399ea2c6ee"
     },
     {
       "id": "C6",
       "grader": "alpha",
       "verdict": "correct",
-      "what_model_did": "Built a Deep Agents coordinator with two AsyncSubAgent specifications targeting remote Agent Protocol graphs over HTTP, relied on create_deep_agent to add the async-subagent middleware and its five model-facing tools, and demonstrated asynchronous launch, update, cancellation, listing, and checking across a checkpointed coordinator thread.",
-      "current_correct_api": "In deepagents>=0.5.0, define AsyncSubAgent specs with name, description, graph_id, and optional url and headers, then pass them through create_deep_agent(subagents=[...]). The resulting coordinator receives start_async_task, check_async_task, update_async_task, cancel_async_task, and list_async_tasks automatically. Invoke asynchronously with ainvoke; for local multi-turn state use a checkpointer and reuse config.configurable.thread_id, while LangSmith Deployments provision persistence. Omit url for the recommended co-deployed ASGI transport or set url for remote HTTP transport.",
+      "what_model_did": "Built a Deep Agents coordinator with two AsyncSubAgent specifications targeting remote Agent Protocol graphs over HTTP, relied on create_deep_agent to add AsyncSubAgentMiddleware and its five model-facing tools, and demonstrated asynchronous launch, update, cancellation, listing, and checking across a checkpointed coordinator thread.",
+      "current_correct_api": "In deepagents>=0.5.0, define AsyncSubAgent specs with name, description, graph_id, and optional url and headers, then pass them through create_deep_agent(subagents=[...]). The coordinator automatically receives start_async_task, check_async_task, update_async_task, cancel_async_task, and list_async_tasks. Invoke it with ainvoke; for local multi-turn state, configure a checkpointer and reuse config.configurable.thread_id, while LangSmith Deployments provision persistence. Omit url for the recommended co-deployed ASGI transport or set url for remote HTTP transport.",
       "key_deltas": [
         "No API correction is required: the AsyncSubAgent fields and create_deep_agent(subagents=...) integration match the current documentation.",
         "The attempt uses the current task-oriented tool names and correctly leaves AsyncSubAgentMiddleware construction to create_deep_agent.",
         "The dedicated async_tasks state channel is middleware-managed, separate from message history, and retained across compaction when coordinator state is checkpointed.",
         "HTTP transport with custom headers is valid for a self-hosted Agent Protocol server; omitting url and headers is the recommended co-deployed ASGI setup.",
-        "Async subagents are a preview feature introduced in deepagents 0.5.0, so future API changes remain possible."
+        "Async subagents are a preview feature available from deepagents 0.5.0, so future API changes remain possible."
       ],
       "include_in_skill": true,
       "value": "high",
@@ -113,7 +113,7 @@
         ".tmp/docs_langchain/deepagents/context-engineering.mdx",
         ".tmp/docs_langchain/deepagents/going-to-production.mdx"
       ],
-      "attempt_sha256": "bf2c572cbb52df51f74f1fd80acf012ec402cbe34ac049f6d36914f0fe267636"
+      "attempt_sha256": "fe17e21a4d42a749b2343e3779c8eee868e71086b288c7feffa1b1fb9e9ece07"
     },
     {
       "id": "C6",
@@ -130,22 +130,23 @@
         ".tmp/docs_langchain/deepagents/context-engineering.mdx",
         ".tmp/docs_langchain/deepagents/going-to-production.mdx"
       ],
-      "attempt_sha256": "bf2c572cbb52df51f74f1fd80acf012ec402cbe34ac049f6d36914f0fe267636"
+      "attempt_sha256": "fe17e21a4d42a749b2343e3779c8eee868e71086b288c7feffa1b1fb9e9ece07"
     },
     {
       "id": "C8",
       "grader": "alpha",
       "verdict": "correct",
-      "what_model_did": "Created a valid release-notes skill under skills/release-notes/SKILL.md, configured an absolute-root FilesystemBackend with virtual_mode=True, passed the top-level skills source path to create_deep_agent, and invoked the agent with a matching release-notes request using the current provider:model form openai:gpt-5.5.",
+      "what_model_did": "Created a valid release-notes skill under skills/release-notes/SKILL.md, configured an absolute-root FilesystemBackend with virtual_mode=True, passed the top-level skills source path to create_deep_agent, and invoked the agent with a matching release-notes request using openai:gpt-5.5.",
       "current_correct_api": "Use deepagents.create_deep_agent(model=\"openai:gpt-5.5\", system_prompt=..., skills=[\"skills\"], backend=FilesystemBackend(root_dir=<absolute-root>, virtual_mode=True)); each skill source contains child directories with valid SKILL.md frontmatter whose name matches the parent directory. Skill paths use forward slashes and are relative to the backend root.",
       "key_deltas": [],
       "include_in_skill": true,
       "value": "high",
       "evidence_files": [
         ".tmp/docs_langchain/deepagents/skills.mdx",
-        ".tmp/docs_langchain/deepagents/customization.mdx"
+        ".tmp/docs_langchain/deepagents/customization.mdx",
+        ".tmp/docs_langchain/deepagents/backends.mdx"
       ],
-      "attempt_sha256": "5dd6805b4f029a9e36443d3b9dac894fc110148e60630bdc71acd0dc79094eb7"
+      "attempt_sha256": "9f53966ec9a3e579ad6dba6f3b0429d231c916ae2b4aa4d992fc890a57c2fb7a"
     },
     {
       "id": "C8",
@@ -160,7 +161,7 @@
         ".tmp/docs_langchain/deepagents/skills.mdx",
         ".tmp/docs_langchain/deepagents/customization.mdx"
       ],
-      "attempt_sha256": "5dd6805b4f029a9e36443d3b9dac894fc110148e60630bdc71acd0dc79094eb7"
+      "attempt_sha256": "9f53966ec9a3e579ad6dba6f3b0429d231c916ae2b4aa4d992fc890a57c2fb7a"
     }
   ],
   "synthesis": {
@@ -168,7 +169,7 @@
     "tasks": [
       {
         "id": "A2",
-        "attempt_sha256": "78dc722fe471d4b132c09fdc452b15725a421b6d46080225ecd8257383c54816",
+        "attempt_sha256": "d90edb281a05d5bbbe14351aefeb4ebd9ccef8371e6e4517e2c667399ea2c6ee",
         "grader_verdicts": [
           {
             "grader": "alpha",
@@ -184,7 +185,7 @@
       },
       {
         "id": "C6",
-        "attempt_sha256": "bf2c572cbb52df51f74f1fd80acf012ec402cbe34ac049f6d36914f0fe267636",
+        "attempt_sha256": "fe17e21a4d42a749b2343e3779c8eee868e71086b288c7feffa1b1fb9e9ece07",
         "grader_verdicts": [
           {
             "grader": "alpha",
@@ -200,7 +201,7 @@
       },
       {
         "id": "C8",
-        "attempt_sha256": "5dd6805b4f029a9e36443d3b9dac894fc110148e60630bdc71acd0dc79094eb7",
+        "attempt_sha256": "9f53966ec9a3e579ad6dba6f3b0429d231c916ae2b4aa4d992fc890a57c2fb7a",
         "grader_verdicts": [
           {
             "grader": "alpha",
@@ -218,16 +219,17 @@
     "all_current_hashes_match": true,
     "all_grader_hashes_match": true,
     "pass": true,
-    "rationale": "All final2 attempts embed the current generated SKILL.md hash 330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199 and the applicable current reference hash: c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca for A2, and 138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043 for C6 and C8. Every alpha and beta grader attempt_sha256 exactly matches its task attempt file, and each task has two independently labeled correct verdicts. Alpha's A2 and C6 key_deltas confirm current behavior or note the async-subagent preview status rather than requiring corrections; beta reports no key deltas. C8's graders differ only on inclusion value, not correctness. No material residual remains."
+    "rationale": "All v1.0.0 release-candidate attempts embed the current lowercase-path generated SKILL.md hash d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd and the applicable current reference hash: c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca for A2, and 138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043 for C6 and C8. Every alpha and beta grader attempt_sha256 exactly matches its task attempt file, and each task has two independently labeled correct verdicts. Alpha's A2 and C6 key_deltas are confirmations and a preview-version caveat rather than corrections; beta reports no key deltas. C8's graders differ only on inclusion value, not API correctness. No material residual remains."
   },
   "repair_iteration": {
-    "summary": "The initial A2 Codex attempt exposed deprecated ModelRequest.override(system_prompt=...), so the reference and baseline were corrected. The final API review then corrected MCP stateful-session guidance, deployment CLI and branding guidance, and the LangGraph error-handler version gate. The full residual gate was rerun against the current generated-file hashes after those repairs.",
+    "summary": "The initial A2 Codex attempt exposed deprecated ModelRequest.override(system_prompt=...), so the reference and baseline were corrected. The final API review then corrected MCP stateful-session guidance, deployment CLI and branding guidance, and the LangGraph error-handler version gate. Public plugin identifiers were subsequently normalized. After all repairs, the full Codex-only residual gate was rerun against the current canonical lowercase-path generated-file hashes.",
     "corrections": [
       "A2 dynamic prompt middleware: replace deprecated ModelRequest.override(system_prompt=...) guidance and repair the baseline.",
       "MCP: correct stateful-session guidance.",
       "Deployment: correct CLI and product-branding guidance.",
-      "LangGraph: add the correct error-handler version gate."
+      "LangGraph: add the correct error-handler version gate.",
+      "Public plugin identifiers: normalize identifiers to the release-candidate canonical form."
     ],
-    "residual_gate": "Re-ran the full Codex-only residual gate against the current generated-file hashes."
+    "residual_gate": "Re-ran the full Codex-only residual gate after public plugin identifier normalization against the current canonical lowercase-path generated-file hashes."
   }
 }

@@ -1,0 +1,61 @@
+name: Bug report
+description: Report incorrect guidance, plugin behavior, or documentation.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Skills for LangChain. Remove secrets and private code before submitting.
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: claude-version
+    attributes:
+      label: Claude Code version
+      placeholder: Output of claude --version
+    validations:
+      required: true
+  - type: textarea
+    id: packages
+    attributes:
+      label: Python package versions
+      description: Include relevant langchain, langgraph, deepagents, and provider package versions.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the prompt or task, generated pattern, and the smallest code needed to reproduce the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected current behavior
+      description: Link the official documentation or package signature that supports the expected behavior when possible.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and the troubleshooting guide.
+          required: true
+        - label: I removed credentials, personal data, and proprietary source code.
+          required: true
+        - label: This is not a security vulnerability; I will use the private reporting channel for security issues.
+          required: true
