@@ -2,6 +2,8 @@
  {
   "id": "A1",
   "fw": "LangChain",
+  "prompt": "Write Python to build a tool-calling agent with LangChain (current version). It should have two simple tools (e.g. a calculator and a weather lookup) and run a user query. Use the current recommended way to construct an agent.",
+  "doc_hint": "langchain/agents.mdx, overview.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -18,24 +20,30 @@
  {
   "id": "A2",
   "fw": "LangChain",
-  "verdict": "correct",
-  "value": "low",
-  "include": false,
-  "current_api": "Exactly the model's code. Per langchain/middleware/custom.mdx and multi-agent/handoffs.mdx: `from langchain.agents import create_agent`; `from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse`; subclass AgentMiddleware and define `def wrap_model_call(self, request: ModelRequest, handler) -> ModelResponse`; read state via `request.state` (e.g. `request.state[\"messages\"]`); rewrite the prompt with `request.override(system_prompt=...)` (a string kwarg is valid and documented in handoffs.mdx: `request.override(system_prompt=config[\"prompt\"].format(**request.state), tools=...)`), then `return handler(request)`. Attach with `create_agent(model=\"openai:gpt-4o\", tools=[...], middleware=[DynamicSystemPromptMiddleware()])`. (Docs also show `override(system_message=SystemMessage(...))` and the `@dynamic_prompt` decorator returning str as alternatives \u2014 the model correctly named both.)",
+  "prompt": "Using LangChain's agent middleware system, write a custom middleware that rewrites the system prompt before every model call based on agent state. Show how you attach it to an agent.",
+  "doc_hint": "langchain/middleware/custom.mdx, overview.mdx",
+  "verdict": "outdated_confident",
+  "value": "medium",
+  "include": true,
+  "current_api": "For a pure state-dependent prompt rewrite, use `from langchain.agents.middleware import dynamic_prompt, ModelRequest`; decorate `def role_prompt(request: ModelRequest) -> str` with `@dynamic_prompt`, read `request.state`, and attach the function with `create_agent(..., middleware=[role_prompt])`. If full `wrap_model_call` control is needed, preserve or replace the `SystemMessage` through `request.override(system_message=SystemMessage(...))` before calling the handler. `ModelRequest.override(system_prompt=...)` is a deprecated compatibility argument; do not emit it in new middleware code. This does not change the current `create_agent(system_prompt=...)` constructor argument.",
   "key_deltas": [
    "create_agent (langchain.agents) not create_react_agent, with the new middleware=[...] kwarg",
    "wrap_model_call(request, handler) replaced the removed modify_model_request",
-   "request.override(...) immutable-update pattern; override(system_prompt=str) and override(system_message=SystemMessage) both valid",
+   "For prompt-only rewriting, prefer `@dynamic_prompt(request: ModelRequest) -> str`",
+   "For `wrap_model_call`, use the immutable `request.override(system_message=SystemMessage(...))` path",
+   "`ModelRequest.override(system_prompt=...)` remains compatibility-only and is deprecated; `create_agent(system_prompt=...)` is still current",
    "AgentMiddleware/ModelRequest/ModelResponse import from langchain.agents.middleware",
    "@dynamic_prompt (request: ModelRequest) -> str is the convenience shortcut built on wrap_model_call"
   ],
-  "what_model_did": "Subclassed AgentMiddleware and implemented wrap_model_call(self, request, handler) -> ModelResponse, read request.state[\"messages\"], rewrote the prompt with request.override(system_prompt=...), and attached it via middleware=[Instance()] on create_agent.",
+  "what_model_did": "Used the current middleware lifecycle and attachment mechanism, but confidently chose the deprecated `request.override(system_prompt=...)` compatibility path for new code instead of `@dynamic_prompt` or `request.override(system_message=SystemMessage(...))`.",
   "self_confidence": "medium",
   "admitted_unknown": false
  },
  {
   "id": "A3",
   "fw": "LangChain",
+  "prompt": "Make a LangChain agent return structured output that conforms to a Pydantic schema (e.g. a ContactInfo model). Use the current agent-level structured-output API, not a bare model call.",
+  "doc_hint": "langchain/structured-output.mdx, agents.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -52,6 +60,8 @@
  {
   "id": "A4",
   "fw": "LangChain",
+  "prompt": "Add automatic conversation summarization to a LangChain agent so its context gets compacted when it grows too large. Use the current built-in middleware and its current parameters.",
+  "doc_hint": "langchain/middleware/built-in.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -70,6 +80,8 @@
  {
   "id": "A5",
   "fw": "LangChain",
+  "prompt": "Define a LangChain tool that needs to read runtime data at call time \u2014 the current user's id and a persistent store. Show the current idiom for a tool to access runtime context and state.",
+  "doc_hint": "langchain/tools.mdx, runtime.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -86,6 +98,8 @@
  {
   "id": "A6",
   "fw": "LangChain",
+  "prompt": "Pass per-invocation runtime context (like user_id and a tier flag) into a LangChain agent, and read it inside a tool. Use the current context API for constructing and invoking the agent.",
+  "doc_hint": "langchain/runtime.mdx, context-engineering.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -102,6 +116,8 @@
  {
   "id": "A7",
   "fw": "LangChain",
+  "prompt": "Build a multi-agent system in LangChain where a coordinator delegates work to specialist sub-agents (e.g. a researcher and a writer). Use the current recommended multi-agent pattern.",
+  "doc_hint": "langchain/multi-agent/subagents.mdx, handoffs.mdx, index.mdx",
   "verdict": "outdated_confident",
   "value": "high",
   "include": true,
@@ -122,6 +138,8 @@
  {
   "id": "B1",
   "fw": "LangGraph",
+  "prompt": "Write a LangGraph node that reads per-run context (e.g. a user config object) and show how that context is provided when the graph is invoked. Use the current node signature and context API.",
+  "doc_hint": "langgraph/graph-api.mdx, runtime",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -140,6 +158,8 @@
  {
   "id": "B2",
   "fw": "LangGraph",
+  "prompt": "Implement human-in-the-loop in LangGraph: pause mid-graph to ask a human to approve or edit a value, then resume with their answer. Use the current interrupt/resume API.",
+  "doc_hint": "langgraph/interrupts.mdx",
   "verdict": "partial",
   "value": "low",
   "include": true,
@@ -157,6 +177,8 @@
  {
   "id": "B3",
   "fw": "LangGraph",
+  "prompt": "Add node-level result caching and a per-node error/retry handler to a LangGraph graph. Use the current APIs for node caching and declarative error handling.",
+  "doc_hint": "langgraph/graph-api.mdx, use-graph-api.mdx, fault-tolerance.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -176,6 +198,8 @@
  {
   "id": "B4",
   "fw": "LangGraph",
+  "prompt": "Use LangGraph's functional API to build a small workflow that keeps short-term memory across invocations on the same thread. Show the current decorators and how previous state is accessed.",
+  "doc_hint": "langgraph/functional-api.mdx, use-functional-api.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -188,6 +212,8 @@
  {
   "id": "B5",
   "fw": "LangGraph",
+  "prompt": "Stream events from a LangGraph agent using the current recommended in-process streaming API, and consume typed projections of the stream (messages, tool calls). Show current version/idiom.",
+  "doc_hint": "langgraph/event-streaming.mdx, streaming.mdx",
   "verdict": "outdated_confident",
   "value": "high",
   "include": true,
@@ -208,10 +234,12 @@
  {
   "id": "C1",
   "fw": "DeepAgents",
+  "prompt": "Using the `deepagents` library, create a 'deep agent' that can plan tasks and use a filesystem. Show the pip install and a minimal working example.",
+  "doc_hint": "deepagents/overview.mdx, quickstart.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
-  "current_api": "Install: `pip install deepagents` (docs add `tavily-python` for the example search tool). `from deepagents import create_deep_agent`. Constructor signature the docs use: `create_deep_agent(model=\"anthropic:claude-sonnet-4-6\", tools=[...], system_prompt=\"...\")` \u2014 the prompt kwarg is `system_prompt=`, NOT `instructions=`, and `model=` takes a `provider:model` string (resolved via `init_chat_model`) or a `BaseChatModel` instance. Planning + virtual filesystem (`write_todos`, `ls`, `read_file`, `write_file`, `edit_file`, plus `glob`/`grep`/`delete`/`execute`) are injected automatically; `tools=` is only for your own tools. Invoke: `agent.invoke({\"messages\": [{\"role\": \"user\", \"content\": ...}]})`; final text at `result[\"messages\"][-1].content` (docs prefer `.content_blocks`), StateBackend files under `result[\"files\"]`. Seeding files on input uses `invoke({\"messages\":[...], \"files\": {\"notes.txt\": create_file_data(\"...\")}})` with `from deepagents.backends.utils import create_file_data` \u2014 raw string dicts are not supported.",
+  "current_api": "Install: `pip install deepagents` (docs add `tavily-python` for the example search tool). `from deepagents import create_deep_agent`. Constructor signature the docs use: `create_deep_agent(model=\"anthropic:claude-sonnet-4-6\", tools=[...], system_prompt=\"...\")` \u2014 the prompt kwarg is `system_prompt=`, NOT `instructions=`, and `model=` takes a `provider:model` string (resolved via `init_chat_model`) or a `BaseChatModel` instance. Planning + virtual filesystem (`write_todos`, `ls`, `read_file`, `write_file`, `edit_file`, plus `glob`/`grep`/`delete`/`execute`) are injected automatically; `tools=` is only for your own tools. Invoke: `agent.invoke({\"messages\": [{\"role\": \"user\", \"content\": ...}]})`; final text at `result[\"messages\"][-1].content` (docs prefer `.content_blocks`), StateBackend files under `result[\"files\"]`. Seeding files on input uses `invoke({\"messages\":[...], \"files\": {\"notes.txt\": create_file_data(\"...\")}})` with `from deepagents.backends.utils import create_file_data` \u2014 raw string dicts are not supported. `model=None` still reaches a deprecated fallback, so current guidance is to pass an explicit model. The `delete` tool requires deepagents>=0.7.a1, recursive directory deletion requires >=0.7.a2, and unsupported backends hide it.",
   "key_deltas": [
    "create_deep_agent(instructions=...) -> create_deep_agent(system_prompt=...): the prompt parameter was renamed to system_prompt (aligns with LangChain create_agent); `instructions=` is not in the current signature and would raise TypeError",
    "Model must be given explicitly as a `provider:model` string (e.g. `model=\"anthropic:claude-sonnet-4-6\"`) or a BaseChatModel instance, resolved via init_chat_model \u2014 the quickstart passes an explicit model rather than relying on a hidden Sonnet default",
@@ -226,6 +254,8 @@
  {
   "id": "C2",
   "fw": "DeepAgents",
+  "prompt": "Configure a deep agent (deepagents library) with a specific chat model and two custom tools, and explain what built-in tools/capabilities it comes with out of the box.",
+  "doc_hint": "deepagents/overview.mdx, customization.mdx, models.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -244,6 +274,8 @@
  {
   "id": "C3",
   "fw": "DeepAgents",
+  "prompt": "Give a deep agent a filesystem backend that stores files on the local disk but is safely sandboxed to one directory (no escaping via .. or absolute paths). Show the backend configuration.",
+  "doc_hint": "deepagents/backends.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -261,6 +293,8 @@
  {
   "id": "C4",
   "fw": "DeepAgents",
+  "prompt": "Set up long-term memory for a deep agent that persists across different threads/sessions (not just within one conversation). Show the backend/storage configuration.",
+  "doc_hint": "deepagents/backends.mdx, memory.mdx, context-engineering.mdx",
   "verdict": "partial",
   "value": "medium",
   "include": true,
@@ -279,6 +313,8 @@
  {
   "id": "C5",
   "fw": "DeepAgents",
+  "prompt": "Add specialized subagents to a deep agent (e.g. a research subagent and a coding subagent) and have the main agent delegate to them. Show the configuration.",
+  "doc_hint": "deepagents/subagents.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -296,12 +332,15 @@
  {
   "id": "C6",
   "fw": "DeepAgents",
+  "prompt": "Configure a deep agent to run long-running subagents asynchronously / in parallel, with the ability to steer or cancel them mid-flight. Show the setup.",
+  "doc_hint": "deepagents/async-subagents.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
-  "current_api": "\"Async subagents\" are a first-class preview feature: `deepagents` 0.5.0 (Python) / 1.9.0 (JS). Configure by passing a list of `AsyncSubAgent` specs \u2014 fields: `name` (req), `description` (req), `graph_id` (req; the graph/assistant ID on an Agent Protocol server, must match langgraph.json for LangGraph deployments), `url` (optional \u2014 omit for in-process ASGI transport, set for HTTP to a remote Agent Protocol server), `headers` (optional auth). When async subagents are configured, `create_deep_agent` auto-adds `AsyncSubAgentMiddleware` to the default stack, giving the supervisor FIVE tools the LLM calls like any other: `start_async_task` (launch, returns task_id immediately, non-blocking), `check_async_task` (status+result), `update_async_task` (STEER \u2014 new instructions to a running task via interrupt multitask strategy, same task_id), `cancel_async_task` (CANCEL \u2014 server-side runs.cancel()), `list_async_tasks` (all tasks with live status). Each subagent runs independently on its own thread on an Agent Protocol server (LangSmith Deployments or self-hosted); co-deploy via one langgraph.json (ASGI) or split via HTTP (auth from LANGSMITH_API_KEY/LANGGRAPH_API_KEY). Task metadata lives in a dedicated `async_tasks` state channel so it survives history compaction. Also: the supervisor prompt param is `system_prompt=`, not `instructions=`.",
+  "current_api": "`from deepagents import AsyncSubAgent, create_deep_agent`. Construct typed `AsyncSubAgent` specs with required `name`, `description`, and `graph_id`, plus optional `url` and `headers`, and pass them directly through `create_deep_agent(model=..., subagents=[...])`. The constructor detects them and auto-attaches `AsyncSubAgentMiddleware`; do not construct that middleware manually. It exposes start_async_task, check_async_task, update_async_task, cancel_async_task, and list_async_tasks. Omit url for co-deployed ASGI transport or set it for remote HTTP transport. Each task runs on an independent Agent Protocol thread, and task metadata persists in the async_tasks state channel.",
   "key_deltas": [
    "\"Run long-running subagents in parallel with steer/cancel\" IS a first-class deepagents feature (Async subagents, preview in deepagents 0.5.0 / JS 1.9.0) \u2014 do NOT hand-roll it from LangGraph primitives.",
+   "Import AsyncSubAgent from top-level deepagents and pass typed specs directly via create_deep_agent(subagents=[...]); the constructor auto-attaches AsyncSubAgentMiddleware, so do not construct it manually.",
    "Configure via a list of `AsyncSubAgent` specs (name, description, graph_id required; url + headers optional) pointing at an Agent Protocol server \u2014 NOT plain sync `subagents=` dicts run through the `task` tool.",
    "Async subagents auto-add `AsyncSubAgentMiddleware`, exposing five supervisor tools: start_async_task / check_async_task / update_async_task / cancel_async_task / list_async_tasks.",
    "Steering = the `update_async_task` tool (interrupt multitask strategy, same task_id) \u2014 NOT `agent.aupdate_state(...)` message injection or HITL `Command(resume=...)`.",
@@ -318,17 +357,19 @@
  {
   "id": "C7",
   "fw": "DeepAgents",
+  "prompt": "Configure context management for a deep agent: automatic conversation summarization plus offloading of very large tool results so the context window doesn't overflow. Show the config.",
+  "doc_hint": "deepagents/context-engineering.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
-  "current_api": "In Deep Agents, context compression is built-in and automatic \u2014 every create_deep_agent(...) call already runs SummarizationMiddleware (default stack) AND filesystem offloading; you do NOT add middleware to enable either. Offloading: tool inputs/results exceeding ~20,000 tokens are moved to the backend filesystem and replaced with a file-path reference + first-10-lines preview, with older tool calls truncated as context crosses ~85% of the model window. Summarization: triggers at 85% of the model's max_input_tokens (fallback 170,000-token trigger / keep 6 messages), keeps ~10% of tokens as recent context, writes the original conversation to the filesystem, and falls back automatically on ContextOverflowError. Constructor kwarg is system_prompt=, not instructions=; model is a provider:model string (e.g. \"anthropic:claude-sonnet-4-6\"). To customize LangChain's SummarizationMiddleware use trigger=(\"tokens\",N)/keep=(\"messages\",N) ContextSize tuples, NOT max_tokens_before_summary/messages_to_keep. For on-demand compaction, pass create_summarization_tool_middleware via middleware= to add a compact_conversation tool.",
+  "current_api": "Deep Agents context compression is automatic: every create_deep_agent call includes summarization and filesystem offloading. Tool results above 20,000 tokens are offloaded immediately and replaced with a backend path plus a first-10-lines preview. File write/edit inputs above 20,000 tokens remain persisted on disk, and their older tool-call records are truncated to path pointers after active context crosses about 85% of the model window. Summarization normally triggers at 85% of max_input_tokens, keeps about 10%, falls back to a 170,000-token trigger and six recent messages without a model profile, preserves the original history in the filesystem, and retries on ContextOverflowError. For optional on-demand compaction, import create_summarization_tool_middleware from deepagents.middleware.summarization and pass the same positional (model, backend) used by create_deep_agent; it adds compact_conversation without disabling automatic summarization.",
   "key_deltas": [
    "Both requested behaviors (auto-summarization + large-tool-result offloading) are built-in defaults of create_deep_agent \u2014 the idiomatic 'config' is default behavior plus optional tuning, NOT hand-adding SummarizationMiddleware/ContextEditingMiddleware",
    "create_deep_agent instruction kwarg is system_prompt=, not instructions=",
    "SummarizationMiddleware params: trigger=(\"tokens\",N)/keep=(\"messages\",N) tuples, not deprecated max_tokens_before_summary=/messages_to_keep=",
    "Deep-agents offloading = filesystem offload of >20k-token tool inputs/results to a file reference + 10-line preview, not ClearToolUsesEdit placeholder replacement",
    "Built-in summarization thresholds: 85% of max_input_tokens, keep ~10%, fallback 170k-token trigger / 6 messages, automatic ContextOverflowError fallback",
-   "Optional on-demand compaction via create_summarization_tool_middleware (adds compact_conversation tool) is the legitimate middleware= use for compaction",
+   "Optional on-demand compaction uses `from deepagents.middleware.summarization import create_summarization_tool_middleware` with positional `(model, backend)`; the returned middleware adds `compact_conversation`.",
    "Model IDs are future/fictional (anthropic:claude-sonnet-4-6); provider:model string format is correct and must not be 'corrected'"
   ],
   "what_model_did": "Hand-assembled a middleware=[SummarizationMiddleware(...), ContextEditingMiddleware(edits=[ClearToolUsesEdit(...)])] stack on create_deep_agent to get summarization + large-tool-result offloading, using instructions= and deprecated SummarizationMiddleware params.",
@@ -338,13 +379,15 @@
  {
   "id": "C8",
   "fw": "DeepAgents",
+  "prompt": "Give a deep agent reusable 'skills' (packaged capabilities it loads on demand). Show how skills are defined and attached to the agent.",
+  "doc_hint": "deepagents/skills.mdx, customization.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
-  "current_api": "Attach skills via a dedicated `skills` list[str] parameter on `create_deep_agent`, e.g. `create_deep_agent(tools=[...], system_prompt=..., skills=[\"pdf-fill\"], backend=FilesystemBackend(root_dir=\"skills\"))`. `from deepagents import create_deep_agent`; `from deepagents.backends import FilesystemBackend` (also StateBackend/StoreBackend/CompositeBackend). Each skill is a directory `skills/<name>/SKILL.md` with YAML frontmatter (`name` must equal the dir name, `description`; optional `license`/`compatibility`/`metadata`/`allowed-tools`) + markdown body, plus optional `scripts/`, `references/`, `assets/` (Agent Skills spec, progressive disclosure). Skill paths are forward-slash and relative to the backend root. `SkillsMiddleware` is auto-added to the default middleware stack when `skills=` is passed and handles discovery (level-1 name/description into system prompt, level-2 body read on invoke). With the default StateBackend, supply skill files at invoke via `invoke(files={...})` using `create_file_data()` from `deepagents.backends.utils`; only FilesystemBackend/StoreBackend load from disk/store. Invoke with `agent.invoke({\"messages\": [...]})`.",
+  "current_api": "Attach skills via the dedicated `skills` list[str] parameter on `create_deep_agent`. Each entry is a top-level skill source directory, using forward slashes and relative to the backend root. For `FilesystemBackend(root_dir=\"/absolute/project\", virtual_mode=True)` with `/absolute/project/skills/pdf-fill/SKILL.md`, use `skills=[\"skills\"]`; passing the individual `skills/pdf-fill` directory loads nothing because the middleware scans each source's child directories. `from deepagents import create_deep_agent`; `from deepagents.backends import FilesystemBackend`. The `SKILL.md` frontmatter `name` must equal its parent directory. `SkillsMiddleware` is auto-added when `skills=` is passed and handles progressive disclosure. With the default StateBackend, supply skill files at invoke via `invoke(files={...})` using `create_file_data()` from `deepagents.backends.utils`.",
   "key_deltas": [
    "Attach skills with the dedicated `skills=[paths]` param on create_deep_agent, NOT by pointing a FilesystemBackend root_dir at the skills folder \u2014 a backend alone loads zero skills. Docs: 'The SDK only loads the sources you pass in skills. It does not automatically scan.'",
-   "skills is list[str] of source paths, forward-slash, relative to the backend root (e.g. skills=[\"pdf-fill\"] or skills=[\"/skills/\"]); backend still stores/serves the files but is separate from the attach mechanism.",
+   "skills is a list of top-level source directories, forward-slash and relative to the backend root (for root /absolute/project and skills/pdf-fill/SKILL.md, use skills=[\"skills\"]); passing an individual skill directory loads nothing.",
    "Use system_prompt= for agent instructions, not instructions= (instructions= does not appear anywhere in the current deepagents API).",
    "SkillsMiddleware is inserted automatically into the default stack when skills= is passed (before FilesystemMiddleware) \u2014 you do not wire it manually.",
    "With the default StateBackend, pass skill file contents at runtime via invoke(files={...}) using create_file_data() from deepagents.backends.utils; FilesystemBackend loads from disk relative to root_dir.",
@@ -357,6 +400,8 @@
  {
   "id": "C9",
   "fw": "DeepAgents",
+  "prompt": "Make a deep agent require human approval before it runs certain tools, and show how to pause and then resume execution after the human decides.",
+  "doc_hint": "deepagents/human-in-the-loop.mdx",
   "verdict": "outdated_confident",
   "value": "high",
   "include": true,
@@ -380,6 +425,8 @@
  {
   "id": "C10",
   "fw": "DeepAgents",
+  "prompt": "Restrict a deep agent's filesystem access with permissions \u2014 e.g. read-only on one path, blocked on another. Show the permissions configuration.",
+  "doc_hint": "deepagents/permissions.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -401,6 +448,8 @@
  {
   "id": "C11",
   "fw": "DeepAgents",
+  "prompt": "Tune a deep agent's harness (system prompt, tools) differently depending on the model provider \u2014 e.g. one setup for Anthropic models and another for OpenAI. Show the mechanism.",
+  "doc_hint": "deepagents/profiles.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -419,6 +468,8 @@
  {
   "id": "C12",
   "fw": "DeepAgents",
+  "prompt": "Let a deep agent execute code in a sandbox to do data analysis (run Python, inspect results). Show the interpreter/sandbox configuration.",
+  "doc_hint": "deepagents/interpreters.mdx, sandboxes.mdx, data-analysis.mdx",
   "verdict": "outdated_confident",
   "value": "high",
   "include": true,
@@ -441,14 +492,16 @@
  {
   "id": "C13",
   "fw": "DeepAgents",
+  "prompt": "Deploy a deep agent to production as a server with streaming endpoints and thread management. Explain the recommended deployment path and required config files.",
+  "doc_hint": "deepagents/going-to-production.mdx",
   "verdict": "partial",
   "value": "medium",
   "include": true,
-  "current_api": "Per deepagents/going-to-production.mdx: the recommended path is \"Managed Deep Agents\" \u2014 a CLI-first hosted runtime in LangSmith (private preview) for creating/running/operating deep agents; for custom application code, routes, or advanced auth, use a \"LangSmith Deployment\" directly (docs/link `/langsmith/deployment`). Both provision threads, runs, a store, and a checkpointer automatically. The old \"LangGraph Platform / LangGraph Cloud\" branding is now \"LangSmith Deployments.\" Required config: `langgraph.json` at repo root with `dependencies` (`[\".\"]` reads requirements.txt/pyproject.toml/package.json), `graphs` (`{\"agent\": \"./agent.py:agent\"}`), and `env` (`.env`); required for both `langgraph dev` and production. Self-host via `langgraph build` \u2192 Docker; managed deploy via `langgraph deploy`. Invoke with `from langgraph_sdk import get_client; client = get_client(url=..., api_key=...); thread = await client.threads.create(); async for chunk in client.runs.stream(thread[\"thread_id\"], \"agent\", input={\"messages\":[...]}, context={\"user_id\":...}, stream_mode=\"updates\")`. Every production invocation carries both `thread_id` (conversation/checkpoints) and `context` (per-run data via `context=`, defined by `context_schema` \u2014 NOT config.configurable). The deployment injects the checkpointer/store, so don't pass your own.",
+  "current_api": "Per deepagents/going-to-production.mdx: the recommended path is \"Managed Deep Agents\" \u2014 a CLI-first hosted runtime in LangSmith (private preview) for creating/running/operating deep agents; for custom application code, routes, or advanced auth, use a \"LangSmith Deployment\" directly. The former hosted-product names are \"LangGraph Platform / LangGraph Cloud\"; \"LangGraph Server\" remains a valid technical runtime term. Required config: `langgraph.json` at repo root with `dependencies`, `graphs`, and `env`. The Deep Agents CLI exposes `deepagents deploy`; direct graph-factory deployment examples use `langgraph deploy`; self-hosted images use `langgraph build` to produce Docker images. Invoke with `from langgraph_sdk import get_client; client = get_client(url=..., api_key=...); thread = await client.threads.create(); async for chunk in client.runs.stream(thread[\"thread_id\"], \"agent\", input={\"messages\":[...]}, context={\"user_id\":...}, stream_mode=\"updates\")`. Every production invocation carries both `thread_id` (conversation/checkpoints) and `context` (per-run data via `context=`, defined by `context_schema` \u2014 not config.configurable). The deployment injects the checkpointer/store, so don't pass your own.",
   "key_deltas": [
-   "Recommended-path branding is now 'LangSmith Deployments', not 'LangGraph Platform / LangGraph Server'; the specifically-recommended product is 'Managed Deep Agents' (LangSmith CLI-first hosted runtime, private preview), with a direct 'LangSmith Deployment' as the fallback for custom code \u2014 the model used the old name and missed Managed Deep Agents.",
+   "Recommended hosted-product branding is now 'LangSmith Deployments', not 'LangGraph Platform / LangGraph Cloud'; 'LangGraph Server' remains a current technical runtime term. The specifically recommended product is Managed Deep Agents, with a direct LangSmith Deployment for custom code.",
    "Production invocation passes per-run data via `context=` (defined by `context_schema`), independent of `thread_id`; the doc stresses passing both, and the model's SDK call omitted `context=`.",
-   "Managed deploy uses the `langgraph deploy` CLI command (doc line 552); the model was uncertain about this.",
+   "Use `deepagents deploy` from the Deep Agents CLI for that path; direct graph-factory examples use `langgraph deploy`, and self-hosted images use `langgraph build`.",
    "EXCLUDE as already-known/correct: the `langgraph.json` shape (dependencies/graphs/env), `langgraph dev`/`langgraph build`, and the `langgraph_sdk` get_client/threads.create/runs.stream API \u2014 the model reproduced these accurately and matching the current docs."
   ],
   "what_model_did": "Correctly identified langgraph.json + langgraph-cli + langgraph_sdk (get_client/threads.create/runs.stream) as the deployment/streaming/thread mechanism, but framed the recommended path as the stale \"LangGraph Platform / LangGraph Server\" and missed the currently-recommended \"Managed Deep Agents\" product.",
@@ -458,6 +511,8 @@
  {
   "id": "C14",
   "fw": "DeepAgents",
+  "prompt": "Connect MCP (Model Context Protocol) tools to a deep agent so it can call tools exposed by an MCP server. Show the integration.",
+  "doc_hint": "langchain/mcp.mdx, deepagents/code/mcp-tools.mdx",
   "verdict": "partial",
   "value": "medium",
   "include": true,
@@ -465,7 +520,7 @@
   "key_deltas": [
    "create_deep_agent uses system_prompt= for custom instructions, NOT instructions= (the pre-1.0 deepagents param name the model used) \u2014 would raise TypeError under the documented signature",
    "MCP HTTP transport is now written transport: \"http\" (streamable-http); model used the older transport: \"streamable_http\" which is only an alias, not the current idiomatic value",
-   "Correct current idiom already used by the model (worth confirming, not a delta): await client.get_tools() returns LangChain tools; the old `async with client as session` context-manager pattern is not needed"
+   "Correct current idiom already used by the model: await client.get_tools() returns LangChain tools and is stateless by default. Stateful servers use `async with client.session(\"server_name\") as session:`; the old `async with client as session` form is obsolete."
   ],
   "what_model_did": "Loaded MCP tools via MultiServerMCPClient(...).get_tools() and passed them into create_deep_agent, then drove it with ainvoke \u2014 the correct current integration shape, but used the deprecated instructions= param and the older streamable_http transport spelling.",
   "self_confidence": "high",

@@ -4,6 +4,8 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+For Python work involving LangChain, LangGraph, or Deep Agents, load the project skill before relying on remembered APIs; recent releases changed several plausible-looking interfaces. See `.claude/harness-spec.md` for the harness inventory and rationale.
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**

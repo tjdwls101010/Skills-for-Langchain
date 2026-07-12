@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-07-12",
+  "method": "codex_subagent_cross_review",
+  "generated_file_sha256": {
+    ".claude/skills/LangChain/SKILL.md": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+    ".claude/skills/LangChain/references/deepagents.md": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043",
+    ".claude/skills/LangChain/references/langchain-langgraph.md": "c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca"
+  },
+  "attempts": [
+    {
+      "id": "A2",
+      "code": "from langchain.agents import create_agent\nfrom langchain.agents.middleware import ModelRequest, dynamic_prompt\n\n\n@dynamic_prompt\ndef state_aware_prompt(request: ModelRequest) -> str:\n    message_count = len(request.state.get(\"messages\", []))\n    return (\n        \"You are a concise, helpful assistant. \"\n        f\"The current conversation contains {message_count} messages.\"\n    )\n\n\nagent = create_agent(\n    model=\"openai:gpt-5.5\",\n    tools=[],\n    middleware=[state_aware_prompt],\n)\n\nresult = agent.invoke(\n    {\"messages\": [{\"role\": \"user\", \"content\": \"Explain agent middleware briefly.\"}]}\n)\nprint(result[\"messages\"][-1].content)\n",
+      "apis_used": [
+        "langchain.agents.create_agent",
+        "langchain.agents.middleware.ModelRequest",
+        "langchain.agents.middleware.dynamic_prompt",
+        "Compiled agent graph.invoke"
+      ],
+      "explanation": "The @dynamic_prompt decorator defines custom middleware that runs before every model call. It reads the current agent state from request.state, returns a replacement system prompt derived from the message count, and is attached by passing the decorated function in create_agent(middleware=[...]).",
+      "skill_sha256": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+      "reference_sha256": "c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca"
+    },
+    {
+      "id": "C6",
+      "code": "import asyncio\nimport os\n\nfrom deepagents import AsyncSubAgent, create_deep_agent\nfrom langgraph.checkpoint.memory import InMemorySaver\n\nSERVER_URL = os.environ[\"AGENT_PROTOCOL_URL\"]\nSERVER_TOKEN = os.environ[\"AGENT_PROTOCOL_TOKEN\"]\nHEADERS = {\"Authorization\": f\"Bearer {SERVER_TOKEN}\"}\n\n# The Agent Protocol server must register graphs/assistants with the IDs\n# \"researcher\" and \"coder\". Each async task runs in its own server thread.\nagent = create_deep_agent(\n    model=\"google_genai:gemini-3.5-flash\",\n    system_prompt=(\n        \"Coordinate long-running specialists. When work is independent, call \"\n        \"start_async_task for every job before checking any of them so they run \"\n        \"concurrently. Return task IDs promptly. Use update_async_task to steer \"\n        \"active work, cancel_async_task to stop it, and check_async_task or \"\n        \"list_async_tasks to report status.\"\n    ),\n    subagents=[\n        AsyncSubAgent(\n            name=\"researcher\",\n            description=\"Performs long-running research and synthesis.\",\n            graph_id=\"researcher\",\n            url=SERVER_URL,\n            headers=HEADERS,\n        ),\n        AsyncSubAgent(\n            name=\"coder\",\n            description=\"Performs long-running implementation and review.\",\n            graph_id=\"coder\",\n            url=SERVER_URL,\n            headers=HEADERS,\n        ),\n    ],\n    # Keeps the coordinator's async_tasks state across the demonstration turns.\n    # Omit this on a LangSmith Deployment, which provisions persistence.\n    checkpointer=InMemorySaver(),\n)\n\n\nasync def send_turn(thread_id: str, message: str) -> None:\n    result = await agent.ainvoke(\n        {\"messages\": [{\"role\": \"user\", \"content\": message}]},\n        config={\"configurable\": {\"thread_id\": thread_id}},\n    )\n    print(result[\"messages\"][-1].content)\n\n\nasync def main() -> None:\n    thread_id = \"async-subagent-demo\"\n\n    # Both start calls return immediately; the remote tasks then overlap.\n    await send_turn(\n        thread_id,\n        \"Start two jobs in parallel: ask researcher to compare three database \"\n        \"designs, and ask coder to prototype the preferred design. Start both \"\n        \"before polling and report their task IDs immediately.\",\n    )\n\n    # Same coordinator thread: task IDs remain available in async_tasks state.\n    await send_turn(\n        thread_id,\n        \"While they are still running, steer the researcher to emphasize \"\n        \"operational cost, cancel the coder task, then list all task statuses.\",\n    )\n\n    await send_turn(\n        thread_id,\n        \"Check the researcher task once and report its current status or result.\",\n    )\n\n\nif __name__ == \"__main__\":\n    asyncio.run(main())\n",
+      "apis_used": [
+        "deepagents.AsyncSubAgent",
+        "deepagents.create_deep_agent",
+        "langgraph.checkpoint.memory.InMemorySaver",
+        "CompiledGraph.ainvoke",
+        "start_async_task",
+        "check_async_task",
+        "update_async_task",
+        "cancel_async_task",
+        "list_async_tasks"
+      ],
+      "explanation": "Each AsyncSubAgent names an independently registered Agent Protocol graph or assistant. Passing these typed specs through subagents= makes create_deep_agent detect them and attach AsyncSubAgentMiddleware automatically; it should not be constructed manually. The middleware exposes five model-facing tools: start returns a task ID immediately, allowing several remote tasks to overlap; update steers a running task using that ID; cancel performs server-side cancellation; and check/list inspect progress. Reusing the coordinator thread preserves the dedicated async_tasks state channel across turns and message compaction. This example uses HTTP transport to a remote Agent Protocol server; when all graphs are co-deployed in one langgraph.json, url and headers can be omitted for the recommended in-process ASGI transport.",
+      "skill_sha256": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+      "reference_sha256": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043"
+    },
+    {
+      "id": "C8",
+      "code": "from pathlib import Path\nfrom tempfile import TemporaryDirectory\n\nfrom deepagents import create_deep_agent\nfrom deepagents.backends import FilesystemBackend\n\n\nSKILL_MD = \"\"\"---\nname: release-notes\ndescription: Draft concise release notes from a list of completed changes.\n---\n\n# Release notes\n\nUse this capability when the user asks for release notes or a changelog entry.\n\n1. Group changes under Added, Changed, Fixed, and Removed when applicable.\n2. Describe user-visible outcomes rather than implementation details.\n3. Omit empty sections and keep every bullet concise.\n\"\"\"\n\n\ndef main() -> None:\n    with TemporaryDirectory() as temp_dir:\n        project_root = Path(temp_dir).resolve()\n\n        # A skill source contains child directories, each with a SKILL.md.\n        skill_dir = project_root / \"skills\" / \"release-notes\"\n        skill_dir.mkdir(parents=True)\n        (skill_dir / \"SKILL.md\").write_text(SKILL_MD, encoding=\"utf-8\")\n\n        backend = FilesystemBackend(\n            root_dir=str(project_root),\n            virtual_mode=True,\n        )\n        agent = create_deep_agent(\n            model=\"openai:gpt-5.5\",\n            system_prompt=\"Use an available skill whenever it matches the request.\",\n            skills=[\"skills\"],\n            backend=backend,\n        )\n\n        result = agent.invoke(\n            {\n                \"messages\": [\n                    {\n                        \"role\": \"user\",\n                        \"content\": (\n                            \"Write release notes for: added CSV export, \"\n                            \"fixed duplicate notifications, and removed legacy login.\"\n                        ),\n                    }\n                ]\n            }\n        )\n        print(result[\"messages\"][-1].content)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "apis_used": [
+        "deepagents.create_deep_agent",
+        "deepagents.backends.FilesystemBackend",
+        "create_deep_agent(skills=...)",
+        "agent.invoke(...)"
+      ],
+      "explanation": "Each reusable capability is a child directory containing a SKILL.md. Its frontmatter name must match that directory name, so release-notes/SKILL.md declares name: release-notes. The skills argument receives the parent source directory (\"skills\"), not \"skills/release-notes\"; paths are relative to the backend root and use forward slashes. Supplying skills= adds SkillsMiddleware, which reads skill metadata at startup and loads the full instructions only when the agent invokes the relevant skill. The filesystem backend is explicitly rooted and uses virtual_mode=True for path protection.",
+      "skill_sha256": "330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199",
+      "reference_sha256": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043"
+    }
+  ],
+  "graders": [
+    {
+      "id": "A2",
+      "grader": "alpha",
+      "verdict": "correct",
+      "what_model_did": "Used create_agent with decorator-based @dynamic_prompt middleware, read the current message list from ModelRequest.state, returned a state-dependent replacement system prompt, attached the middleware through middleware=[state_aware_prompt], and invoked the compiled agent with a messages state update.",
+      "current_correct_api": "Import create_agent from langchain.agents and dynamic_prompt plus ModelRequest from langchain.agents.middleware. Decorate a function accepting ModelRequest and returning str, read state via request.messages or request.state, and pass the decorated middleware to create_agent(middleware=[...]). A provider-qualified model identifier such as openai:gpt-5.5 is supported. Invoke the resulting agent with {\"messages\": [...]} and read the final AIMessage from result[\"messages\"].",
+      "key_deltas": [
+        "No material API delta: the attempt matches the current LangChain 1.x dynamic-prompt middleware pattern.",
+        "request.messages is the documented convenience accessor for request.state[\"messages\"], but request.state.get(\"messages\", []) remains valid state access.",
+        "The provider-qualified model string openai:gpt-5.5 is shown in current official LangChain documentation."
+      ],
+      "include_in_skill": true,
+      "value": "high",
+      "evidence_files": [
+        ".tmp/docs_langchain/langchain/context-engineering.mdx",
+        ".tmp/docs_langchain/langchain/middleware/custom.mdx",
+        ".tmp/docs_langchain/langchain/agents.mdx",
+        ".tmp/docs_langchain/langchain/quickstart.mdx"
+      ],
+      "attempt_sha256": "78dc722fe471d4b132c09fdc452b15725a421b6d46080225ecd8257383c54816"
+    },
+    {
+      "id": "A2",
+      "grader": "beta",
+      "verdict": "correct",
+      "what_model_did": "Used create_agent with @dynamic_prompt middleware, read the current message list from ModelRequest state, generated a replacement system prompt before each model call, invoked the compiled agent graph, and printed the final AI message.",
+      "current_correct_api": "Import create_agent from langchain.agents and dynamic_prompt plus ModelRequest from langchain.agents.middleware; decorate a function accepting ModelRequest and returning a prompt string or SystemMessage, then pass the decorated middleware in create_agent(middleware=[...]). ModelRequest.messages is the documented convenience accessor for request.state[\"messages\"], though request.state.get(...) is valid. A provider-qualified model string such as openai:gpt-5.5 is supported.",
+      "key_deltas": [],
+      "include_in_skill": true,
+      "value": "high",
+      "evidence_files": [
+        ".tmp/docs_langchain/langchain/context-engineering.mdx",
+        ".tmp/docs_langchain/langchain/middleware/custom.mdx",
+        ".tmp/docs_langchain/langchain/agents.mdx",
+        ".tmp/docs_langchain/langchain/mcp.mdx"
+      ],
+      "attempt_sha256": "78dc722fe471d4b132c09fdc452b15725a421b6d46080225ecd8257383c54816"
+    },
+    {
+      "id": "C6",
+      "grader": "alpha",
+      "verdict": "correct",
+      "what_model_did": "Built a Deep Agents coordinator with two AsyncSubAgent specifications targeting remote Agent Protocol graphs over HTTP, relied on create_deep_agent to add the async-subagent middleware and its five model-facing tools, and demonstrated asynchronous launch, update, cancellation, listing, and checking across a checkpointed coordinator thread.",
+      "current_correct_api": "In deepagents>=0.5.0, define AsyncSubAgent specs with name, description, graph_id, and optional url and headers, then pass them through create_deep_agent(subagents=[...]). The resulting coordinator receives start_async_task, check_async_task, update_async_task, cancel_async_task, and list_async_tasks automatically. Invoke asynchronously with ainvoke; for local multi-turn state use a checkpointer and reuse config.configurable.thread_id, while LangSmith Deployments provision persistence. Omit url for the recommended co-deployed ASGI transport or set url for remote HTTP transport.",
+      "key_deltas": [
+        "No API correction is required: the AsyncSubAgent fields and create_deep_agent(subagents=...) integration match the current documentation.",
+        "The attempt uses the current task-oriented tool names and correctly leaves AsyncSubAgentMiddleware construction to create_deep_agent.",
+        "The dedicated async_tasks state channel is middleware-managed, separate from message history, and retained across compaction when coordinator state is checkpointed.",
+        "HTTP transport with custom headers is valid for a self-hosted Agent Protocol server; omitting url and headers is the recommended co-deployed ASGI setup.",
+        "Async subagents are a preview feature introduced in deepagents 0.5.0, so future API changes remain possible."
+      ],
+      "include_in_skill": true,
+      "value": "high",
+      "evidence_files": [
+        ".tmp/docs_langchain/deepagents/async-subagents.mdx",
+        ".tmp/docs_langchain/deepagents/customization.mdx",
+        ".tmp/docs_langchain/deepagents/context-engineering.mdx",
+        ".tmp/docs_langchain/deepagents/going-to-production.mdx"
+      ],
+      "attempt_sha256": "bf2c572cbb52df51f74f1fd80acf012ec402cbe34ac049f6d36914f0fe267636"
+    },
+    {
+      "id": "C6",
+      "grader": "beta",
+      "verdict": "correct",
+      "what_model_did": "Built a local async supervisor with create_deep_agent, two remote AsyncSubAgent specifications, automatic async-subagent tools, coordinator-thread checkpointing, and successive turns demonstrating parallel launch, update, cancellation, listing, and status checking.",
+      "current_correct_api": "With deepagents>=0.5.0, import AsyncSubAgent and create_deep_agent from deepagents; pass AsyncSubAgent(name=..., description=..., graph_id=..., url=..., headers=...) objects through create_deep_agent(subagents=...). This automatically adds AsyncSubAgentMiddleware and its start_async_task, check_async_task, update_async_task, cancel_async_task, and list_async_tasks tools. Reuse a stable configurable thread_id with a checkpointer for coordinator state across local turns; LangSmith Deployments provide persistent checkpointing. Omit url and headers for the recommended co-deployed ASGI transport.",
+      "key_deltas": [],
+      "include_in_skill": true,
+      "value": "high",
+      "evidence_files": [
+        ".tmp/docs_langchain/deepagents/async-subagents.mdx",
+        ".tmp/docs_langchain/deepagents/customization.mdx",
+        ".tmp/docs_langchain/deepagents/context-engineering.mdx",
+        ".tmp/docs_langchain/deepagents/going-to-production.mdx"
+      ],
+      "attempt_sha256": "bf2c572cbb52df51f74f1fd80acf012ec402cbe34ac049f6d36914f0fe267636"
+    },
+    {
+      "id": "C8",
+      "grader": "alpha",
+      "verdict": "correct",
+      "what_model_did": "Created a valid release-notes skill under skills/release-notes/SKILL.md, configured an absolute-root FilesystemBackend with virtual_mode=True, passed the top-level skills source path to create_deep_agent, and invoked the agent with a matching release-notes request using the current provider:model form openai:gpt-5.5.",
+      "current_correct_api": "Use deepagents.create_deep_agent(model=\"openai:gpt-5.5\", system_prompt=..., skills=[\"skills\"], backend=FilesystemBackend(root_dir=<absolute-root>, virtual_mode=True)); each skill source contains child directories with valid SKILL.md frontmatter whose name matches the parent directory. Skill paths use forward slashes and are relative to the backend root.",
+      "key_deltas": [],
+      "include_in_skill": true,
+      "value": "high",
+      "evidence_files": [
+        ".tmp/docs_langchain/deepagents/skills.mdx",
+        ".tmp/docs_langchain/deepagents/customization.mdx"
+      ],
+      "attempt_sha256": "5dd6805b4f029a9e36443d3b9dac894fc110148e60630bdc71acd0dc79094eb7"
+    },
+    {
+      "id": "C8",
+      "grader": "beta",
+      "verdict": "correct",
+      "what_model_did": "Created a valid release-notes skill under skills/release-notes/SKILL.md, configured FilesystemBackend with an absolute root_dir and virtual_mode=True, passed the top-level relative source path via skills=[\"skills\"], and invoked the compiled deep agent with the current openai:gpt-5.5 provider:model identifier and system_prompt.",
+      "current_correct_api": "Use create_deep_agent(model=\"provider:model\", system_prompt=..., skills=[\"<top-level-skill-source>\"], backend=FilesystemBackend(root_dir=\"<absolute-root>\", virtual_mode=True)); each child skill directory must contain SKILL.md whose required name frontmatter matches that directory. Skill-source paths use forward slashes and are relative to the backend root.",
+      "key_deltas": [],
+      "include_in_skill": false,
+      "value": "low",
+      "evidence_files": [
+        ".tmp/docs_langchain/deepagents/skills.mdx",
+        ".tmp/docs_langchain/deepagents/customization.mdx"
+      ],
+      "attempt_sha256": "5dd6805b4f029a9e36443d3b9dac894fc110148e60630bdc71acd0dc79094eb7"
+    }
+  ],
+  "synthesis": {
+    "method": "codex_subagent_cross_review",
+    "tasks": [
+      {
+        "id": "A2",
+        "attempt_sha256": "78dc722fe471d4b132c09fdc452b15725a421b6d46080225ecd8257383c54816",
+        "grader_verdicts": [
+          {
+            "grader": "alpha",
+            "verdict": "correct"
+          },
+          {
+            "grader": "beta",
+            "verdict": "correct"
+          }
+        ],
+        "consensus": "correct",
+        "material_residuals": []
+      },
+      {
+        "id": "C6",
+        "attempt_sha256": "bf2c572cbb52df51f74f1fd80acf012ec402cbe34ac049f6d36914f0fe267636",
+        "grader_verdicts": [
+          {
+            "grader": "alpha",
+            "verdict": "correct"
+          },
+          {
+            "grader": "beta",
+            "verdict": "correct"
+          }
+        ],
+        "consensus": "correct",
+        "material_residuals": []
+      },
+      {
+        "id": "C8",
+        "attempt_sha256": "5dd6805b4f029a9e36443d3b9dac894fc110148e60630bdc71acd0dc79094eb7",
+        "grader_verdicts": [
+          {
+            "grader": "alpha",
+            "verdict": "correct"
+          },
+          {
+            "grader": "beta",
+            "verdict": "correct"
+          }
+        ],
+        "consensus": "correct",
+        "material_residuals": []
+      }
+    ],
+    "all_current_hashes_match": true,
+    "all_grader_hashes_match": true,
+    "pass": true,
+    "rationale": "All final2 attempts embed the current generated SKILL.md hash 330129ac1a26134d4acd82ce09b8f30624946931130467c910c53c6a2fcd0199 and the applicable current reference hash: c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca for A2, and 138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043 for C6 and C8. Every alpha and beta grader attempt_sha256 exactly matches its task attempt file, and each task has two independently labeled correct verdicts. Alpha's A2 and C6 key_deltas confirm current behavior or note the async-subagent preview status rather than requiring corrections; beta reports no key deltas. C8's graders differ only on inclusion value, not correctness. No material residual remains."
+  },
+  "repair_iteration": {
+    "summary": "The initial A2 Codex attempt exposed deprecated ModelRequest.override(system_prompt=...), so the reference and baseline were corrected. The final API review then corrected MCP stateful-session guidance, deployment CLI and branding guidance, and the LangGraph error-handler version gate. The full residual gate was rerun against the current generated-file hashes after those repairs.",
+    "corrections": [
+      "A2 dynamic prompt middleware: replace deprecated ModelRequest.override(system_prompt=...) guidance and repair the baseline.",
+      "MCP: correct stateful-session guidance.",
+      "Deployment: correct CLI and product-branding guidance.",
+      "LangGraph: add the correct error-handler version gate."
+    ],
+    "residual_gate": "Re-ran the full Codex-only residual gate against the current generated-file hashes."
+  }
+}

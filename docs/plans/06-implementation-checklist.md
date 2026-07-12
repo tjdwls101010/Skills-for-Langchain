@@ -13,7 +13,7 @@ An ordered, self-contained step list for the session that builds the skill from 
 
 2. **references/deepagents.md** → per `03`, all 16 topics in the recommended order. For each topic, verify the `current_api` against the cited `.mdx` file before writing it as fact — correct anything the docs contradict (the plan flags several "verify import path" spots). Write in conviction style: reason-first, teach only the delta, omit the "do not re-teach" parts. Add the version stamp at the top.
 
-3. **references/langchain-langgraph.md** → per `04`, 5 LangChain + 4 LangGraph deltas. Same verification discipline. Add the version stamp and the top-of-file reminder that excluded topics are deliberately absent.
+3. **references/langchain-langgraph.md** → per `04`, 6 LangChain + 4 LangGraph deltas. Same verification discipline. Add the version stamp and the top-of-file reminder that excluded topics are deliberately absent.
 
 4. **Maintenance note.** Decide where the refresh procedure lives (a short paragraph in SKILL.md's "Staying current" section pointing at the plan, or a small `references/maintenance.md`). Keep it to a paragraph: re-fetch docs, re-run the survey and both probes, re-cross the axes, update only changed deltas, bump the stamp.
 
@@ -23,7 +23,7 @@ An ordered, self-contained step list for the session that builds the skill from 
 
 6. **Trigger review.** Re-read the `description` against the harness-creator `references/skills.md` triggering/near-miss guidance, and sanity-check it against the positive/negative prompt lists in `05`. `validate_harness.py` does not do this for you.
 
-7. **Before/after delta closure.** Run the "after" probe variants described in `05` (reuse the two persisted workflow scripts; inject the reference content into the attempt stage). Confirm the include-list verdicts flip to `correct` and the excluded tasks do not regress. Revise any `03`/`04` section whose task did not flip, then re-run that task. Record the flip rate in `research/probe-results.md`.
+7. **Before/after delta closure.** Run the "after" probe variants described in `05` from the exact prompts and source hints committed in `research/probe-round1-tasks.json` and `research/probe-round2-tasks.json`; inject the reference content into the attempt stage. For the final residual gate, follow the user's Codex-only override: isolated Codex attempt agents receive the exact generated files, two independent Codex graders per task verify against official docs, and no Claude process is invoked. Confirm the include-list verdicts flip to `correct` and the excluded tasks do not regress. Revise any `03`/`04` section whose task did not flip, then re-run that task. Record hashes, grader consensus, and the flip rate in `research/probe-results.md`.
 
 8. **(Optional) e2e trigger test** via `run_e2e.py` with user consent, to confirm the skill auto-triggers and is used in a real headless session.
 

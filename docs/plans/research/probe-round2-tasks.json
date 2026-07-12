@@ -2,6 +2,8 @@
  {
   "id": "R1",
   "fw": "LangChain",
+  "prompt": "A LangChain agent processes user text that may contain emails and credit-card numbers. Redact that PII before it reaches the model (and optionally in the model's output). Use the current built-in middleware for this.",
+  "doc_hint": "langchain/middleware/built-in.mdx, agents.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -17,6 +19,8 @@
  {
   "id": "R2",
   "fw": "LangChain",
+  "prompt": "A long-running LangChain agent accumulates many large tool-call results in its context. Automatically clear/trim old tool results once context grows past a threshold, keeping the most recent few. Use the current built-in middleware.",
+  "doc_hint": "langchain/middleware/built-in.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -32,6 +36,8 @@
  {
   "id": "R3",
   "fw": "LangChain",
+  "prompt": "Make a LangChain agent automatically fall back to a secondary model if the primary model call fails. Use the current built-in mechanism.",
+  "doc_hint": "langchain/middleware/built-in.mdx, agents.mdx",
   "verdict": "outdated_confident",
   "value": "high",
   "include": true,
@@ -50,6 +56,8 @@
  {
   "id": "R4",
   "fw": "LangChain",
+  "prompt": "Limit how many model calls and tool calls a LangChain agent may make within a single run, and control what happens when the limit is hit. Use the current built-in middleware.",
+  "doc_hint": "langchain/middleware/built-in.mdx",
   "verdict": "partial",
   "value": "medium",
   "include": true,
@@ -69,6 +77,8 @@
  {
   "id": "R5",
   "fw": "LangChain",
+  "prompt": "A LangChain agent has ~100 tools, which is too many to send to the model every turn. Have it select only the relevant tools per user query. Use the current built-in mechanism.",
+  "doc_hint": "langchain/middleware/built-in.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -84,6 +94,8 @@
  {
   "id": "R6",
   "fw": "LangChain",
+  "prompt": "Defer loading of a large tool catalog in a LangChain agent so tools are surfaced on demand via provider-side tool search rather than all sent up front. Use the current API.",
+  "doc_hint": "langchain/middleware/built-in.mdx",
   "verdict": "unknown",
   "value": "high",
   "include": true,
@@ -103,6 +115,8 @@
  {
   "id": "R7",
   "fw": "LangGraph",
+  "prompt": "Tune how often a LangGraph run persists checkpoints, trading durability for latency (e.g. only persist at the end vs after every step). Use the current invoke/stream parameter for this.",
+  "doc_hint": "langgraph/checkpointers.mdx, thinking-in-langgraph.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -119,6 +133,8 @@
  {
   "id": "R8",
   "fw": "LangGraph",
+  "prompt": "A LangGraph state channel holds a large, continuously growing list, and checkpoint size is ballooning because the whole list is snapshotted every step. Keep checkpoint blobs small while preserving the reducer semantics. Use the current API.",
+  "doc_hint": "langgraph/pregel.mdx, checkpointers.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
@@ -138,6 +154,8 @@
  {
   "id": "R9",
   "fw": "LangGraph",
+  "prompt": "Set up production-grade persistence for a LangGraph app: durable checkpoints in Postgres, plus encryption of checkpoint data at rest. Show the current packages, imports, and setup.",
+  "doc_hint": "langgraph/checkpointers.mdx, persistence.mdx",
   "verdict": "correct",
   "value": "low",
   "include": false,
@@ -153,16 +171,18 @@
  {
   "id": "R10",
   "fw": "DeepAgents",
+  "prompt": "Make a deep agent self-evaluate its output against a quality rubric and iterate/revise until it passes (LLM-as-judge loop). Use the current deepagents mechanism.",
+  "doc_hint": "deepagents/rubric.mdx",
   "verdict": "outdated_confident",
   "value": "high",
   "include": true,
-  "current_api": "deepagents ships a purpose-built `RubricMiddleware` (requires deepagents>=0.6.5, beta) \u2014 this is the current mechanism for exactly this task. Add it to the middleware list: `create_deep_agent(tools=..., system_prompt=..., middleware=[RubricMiddleware(model=\"anthropic:claude-...\", max_iterations=3, system_prompt=<optional grader prompt>, tools=<optional evidence-gathering tools>, on_evaluation=<optional callback>)])`. Trigger the self-evaluate/iterate loop by passing a `rubric` string on invocation state: `agent.invoke({\"messages\": [...], \"rubric\": \"<newline-delimited criteria>\"})`; if no `rubric` is supplied the middleware does not run. After each output the LLM-as-judge grader sub-agent returns one of a fixed verdict enum \u2014 `satisfied` / `needs_revision` (feedback injected, agent re-runs) / `max_iterations_reached` / `failed` / `grader_error` \u2014 rather than a free-form PASS/FAIL you parse yourself. Observe progress via the `on_evaluation` callback (a `RubricEvaluation` dict with grading_run_id/iteration/result/explanation/criteria) or `rubric_evaluation_start`/`rubric_evaluation_end` events on `stream.custom`; terminal status is on private state `_rubric_status`. A `RubricCodeGenerationMiddleware` variant exists for vetted code generation.",
+  "current_api": "deepagents ships beta `RubricMiddleware` (deepagents>=0.6.5). Add it through `create_deep_agent(..., middleware=[RubricMiddleware(model=..., max_iterations=3, tools=..., on_evaluation=...)])` and trigger it by passing a `rubric` string in invocation state; without `rubric` it is inert. Each grader pass has `RubricEvaluation.result` equal to `satisfied`, `needs_revision`, `failed`, or `grader_error`. `needs_revision` injects feedback and loops. If the cap is reached while revision is still needed, the callback/event still reports `needs_revision`; terminal private state `_rubric_status` is `max_iterations_reached`. Observe passes through `on_evaluation` or rubric events on `stream.custom`. Code-generation examples use the same `RubricMiddleware`, not a separate middleware class.",
   "key_deltas": [
    "The current deepagents mechanism is the built-in `RubricMiddleware` (deepagents>=0.6.5, beta) added to `middleware=[...]`, NOT a hand-rolled critique subagent + prompt-driven revision loop; the model's stated premise 'deepagents has no dedicated judge-loop primitive' is false.",
    "Start the loop by passing a `rubric` string on invoke state (`agent.invoke({'messages':[...], 'rubric': '...'})`), not by embedding the rubric in the agent's instructions; with no `rubric` supplied the middleware is inert.",
    "Configure the grader on the middleware, not in prose: `RubricMiddleware(model=..., max_iterations=3, system_prompt=..., tools=..., on_evaluation=...)`. `max_iterations` defaults to 3 (model instead hard-coded 'iterate at most 4' in the prompt).",
-   "Verdicts are a fixed enum \u2014 satisfied / needs_revision / max_iterations_reached / failed / grader_error \u2014 with automatic per-criterion feedback injection and loop-back on needs_revision; you do not self-parse a PASS/FAIL string or manage the retry loop by hand.",
-   "Give the grader `tools=` (e.g. a run_test_suite tool) to gather evidence before verdict instead of reasoning from the transcript alone; observe via `on_evaluation` callback or `rubric_evaluation_start`/`_end` on `stream.custom`; there is also a `RubricCodeGenerationMiddleware` variant.",
+   "Per-pass RubricEvaluation.result is satisfied / needs_revision / failed / grader_error; cap exhaustion leaves the last pass at needs_revision and sets terminal private `_rubric_status` to max_iterations_reached.",
+   "Give the grader `tools=` (e.g. a run_test_suite tool) to gather evidence before verdict instead of reasoning from the transcript alone; observe via `on_evaluation` callback or `rubric_evaluation_start`/`_end` on `stream.custom`. Code-generation examples use the same `RubricMiddleware`.",
    "Secondary: deepagents subagent-spec key is `system_prompt`, not the outdated `prompt` key the model used."
   ],
   "what_model_did": "At high confidence, the model claimed deepagents has no dedicated judge-loop primitive and hand-rolled an LLM-as-judge loop using a critique subagent (dict with name/description/prompt) plus main-agent instructions that draft-to-file, dispatch via the built-in `task` tool, and revise until a self-parsed PASS.",
@@ -172,13 +192,15 @@
  {
   "id": "R11",
   "fw": "DeepAgents",
+  "prompt": "Let a deep agent spawn a variable number of subagents programmatically from code \u2014 fanning out parallel subtasks whose count isn't known ahead of time \u2014 rather than via fixed pre-declared subagents. Use the current deepagents mechanism.",
+  "doc_hint": "deepagents/dynamic-subagents.mdx, interpreters.mdx, subagents.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
-  "current_api": "The current deepagents mechanism for spawning a runtime-variable number of subagents \"from code\" is Dynamic subagents (Beta), which runs on the interpreter runtime. Install `deepagents[quickjs]` plus `langchain-quickjs>=0.2.0` (Python >=3.11), then pass interpreter middleware via the `middleware=` arg: `from deepagents import create_deep_agent` and add `CodeInterpreterMiddleware(...)` (import from the interpreter/deepagents middleware surface). When the agent has subagents AND interpreter middleware, the interpreter exposes a built-in `task()` global (on by default; `CodeInterpreterMiddleware(subagents=True)`). The agent then writes JavaScript in the `eval` tool that holds work in variables and dispatches subagents in loops/parallel batches with `task({ description, subagentType, responseSchema? })` \u2014 so the count is decided at runtime in code, not fixed at emit time. The built-in `general-purpose` subagent handles basic fan-out with no extra config (auto-added unless you supply one named `general-purpose`). Trigger dynamic orchestration by including the literal word \"workflow\" in the prompt. For discovering the item set from code, enable programmatic tool calling (PTC) with an allowlist (e.g. `glob`). Constructor uses `system_prompt=` (not `instructions=`) and a `provider:model` model string resolved via init_chat_model, e.g. `model=\"anthropic:claude-sonnet-4-6\"`. Disable via `CodeInterpreterMiddleware(subagents=False)` to force the normal `task` tool.",
+  "current_api": "The current deepagents mechanism for spawning a runtime-variable number of subagents \"from code\" is Dynamic subagents (Beta), which runs on the interpreter runtime. Install `deepagents[quickjs]` plus `langchain-quickjs>=0.2.0` (Python >=3.11), then import `CodeInterpreterMiddleware` from `langchain_quickjs` and pass it through `create_deep_agent(middleware=[...])` (import from the interpreter/deepagents middleware surface). When the agent has subagents AND interpreter middleware, the interpreter exposes a built-in `task()` global (on by default; `CodeInterpreterMiddleware(subagents=True)`). The agent then writes JavaScript in the `eval` tool that holds work in variables and dispatches subagents in loops/parallel batches with `task({ description, subagentType, responseSchema? })` \u2014 so the count is decided at runtime in code, not fixed at emit time. The built-in `general-purpose` subagent handles basic fan-out with no extra config (auto-added unless you supply one named `general-purpose`). Trigger dynamic orchestration by including the literal word \"workflow\" in the prompt. For discovering the item set from code, enable programmatic tool calling (PTC) with an allowlist (e.g. `glob`). Constructor uses `system_prompt=` (not `instructions=`) and a `provider:model` model string resolved via init_chat_model, e.g. `model=\"anthropic:claude-sonnet-4-6\"`. Disable via `CodeInterpreterMiddleware(subagents=False)` to force the normal `task` tool.",
   "key_deltas": [
    "Mechanism: 'spawn subagents programmatically from code' = Dynamic subagents via the interpreter (`CodeInterpreterMiddleware` + built-in `task()` global called from JS `eval` code), NOT emitting N parallel `task` tool calls in one model turn \u2014 the docs explicitly frame the parallel-tool-call approach as the unreliable thing dynamic subagents replace.",
-   "Wiring: pass `CodeInterpreterMiddleware(...)` through `create_deep_agent(middleware=[...])`; requires `deepagents[quickjs]` + `langchain-quickjs>=0.2.0` + Python >=3.11. `task()` dispatch is ON by default whenever the agent has subagents; disable with `CodeInterpreterMiddleware(subagents=False)`.",
+   "Wiring: pass `CodeInterpreterMiddleware` from `langchain_quickjs` through `create_deep_agent(middleware=[...])`; requires `deepagents[quickjs]` + `langchain-quickjs>=0.2.0` + Python >=3.11. `task()` dispatch is ON by default whenever the agent has subagents; disable with `CodeInterpreterMiddleware(subagents=False)`.",
    "Trigger: include the literal word 'workflow' in the prompt to make the code-interpreter deep agent fan out subagents from code; a plain request instead does a single direct delegation.",
    "`task()` from code takes `description`, `subagentType` (JS) / `subagent_type` (Py), optional `responseSchema`; hold work in interpreter variables and loop/parallel-batch the calls, so N is runtime-decided in code. Discovering the item set from code needs PTC (allowlist e.g. `glob`).",
    "Do NOT drop to LangGraph `Send` for code-driven deepagents fan-out \u2014 dynamic subagents is the deepagents-native mechanism; `Send` is not the recommended path here.",
@@ -192,12 +214,14 @@
  {
   "id": "R12",
   "fw": "DeepAgents",
+  "prompt": "Give a deep agent an efficient way to compose and batch multiple tool calls in a single step (programmatic, in-loop orchestration of its own tools), without a full remote code sandbox. Use the current deepagents mechanism.",
+  "doc_hint": "deepagents/interpreters.mdx, customization.mdx",
   "verdict": "partial",
   "value": "high",
   "include": true,
-  "current_api": "The current deepagents mechanism is the Interpreters feature with programmatic tool calling (PTC), Beta. Install the QuickJS extra: `pip install -U \"deepagents[quickjs]\"` (requires `langchain-quickjs>=0.2.0`, Python >=3.11). Import `from deepagents.middleware import CodeInterpreterMiddleware` and pass it via `create_deep_agent(tools=[...], model=..., system_prompt=..., middleware=[CodeInterpreterMiddleware(ptc=[search, fetch, score])])`. The middleware adds an `eval` tool; the agent writes JavaScript (QuickJS, in-memory, no host filesystem/network/shell/clock by default) and orchestrates the allowlisted tools in loops/branches/retries/parallel batches under a `tools.*` namespace \u2014 tool names are camelCased and awaited (e.g. `web_search` -> `await tools.webSearch(...)`); only the final interpreter result returns to the model. PTC is OFF by default and is enabled solely via the `ptc=` allowlist (tool-name strings or BaseTool instances). Other kwargs: `max_ptc_calls` (default 256), `mode` (\"thread\"/\"turn\"/\"call\", default \"thread\"), `timeout` (5.0s), `tool_name` (\"eval\"), `capture_console`, `max_result_chars`, `subagents` (True). JS equivalent: `createCodeInterpreterMiddleware({ ptc: [...] })` with `@langchain/quickjs`. This is the in-loop, non-remote-sandbox path; a full remote sandbox would instead use a sandbox backend.",
+  "current_api": "The current deepagents mechanism is the Interpreters feature with programmatic tool calling (PTC), Beta. Install the QuickJS extra: `pip install -U \"deepagents[quickjs]\"` (requires `langchain-quickjs>=0.2.0`, Python >=3.11). Import `from langchain_quickjs import CodeInterpreterMiddleware` and pass it via `create_deep_agent(tools=[...], model=..., system_prompt=..., middleware=[CodeInterpreterMiddleware(ptc=[search, fetch, score])])`. The middleware adds an `eval` tool; the agent writes JavaScript (QuickJS, in-memory, no host filesystem/network/shell/clock by default) and orchestrates the allowlisted tools in loops/branches/retries/parallel batches under a `tools.*` namespace \u2014 tool names are camelCased and awaited (e.g. `web_search` -> `await tools.webSearch(...)`); only the final interpreter result returns to the model. PTC is OFF by default and is enabled solely via the `ptc=` allowlist (tool-name strings or BaseTool instances). Other kwargs: `max_ptc_calls` (default 256), `mode` (\"thread\"/\"turn\"/\"call\", default \"thread\"), `timeout` (5.0s), `tool_name` (\"eval\"), `capture_console`, `max_result_chars`, `subagents` (True). JS equivalent: `createCodeInterpreterMiddleware({ ptc: [...] })` with `@langchain/quickjs`. This is the in-loop, non-remote-sandbox path; a full remote sandbox would instead use a sandbox backend.",
   "key_deltas": [
-   "Class/import: invented `CodeExecutionMiddleware` -> real is `CodeInterpreterMiddleware` (Py, `from deepagents.middleware import CodeInterpreterMiddleware`) / `createCodeInterpreterMiddleware` (JS)",
+   "Class/import: invented `CodeExecutionMiddleware` -> real is `CodeInterpreterMiddleware` (Python, `from langchain_quickjs import CodeInterpreterMiddleware`) / `createCodeInterpreterMiddleware` (JS)",
    "Enable mechanism: `tools=..., sandbox=False` (invented) -> the allowlist kwarg is `ptc=[<tool names or BaseTool instances>]`; PTC is OFF by default and enabled only via `ptc=`",
    "No `sandbox=False` toggle exists \u2014 interpreters are inherently a scoped QuickJS in-memory runtime, distinct from sandbox backends; that non-sandbox property is intrinsic, not a flag",
    "Interpreter language is JavaScript/QuickJS, NOT Python; the added tool is `eval` (not `execute_python`), and tools are exposed under `tools.*` camelCased and awaited (e.g. `web_search` -> `await tools.webSearch(...)`)",

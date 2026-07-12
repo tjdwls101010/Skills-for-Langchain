@@ -33,7 +33,7 @@ final = result["messages"][-1].content      # docs prefer result["messages"][-1]
 
 Full constructor parameters (name them so the model stops guessing): `model`, `system_prompt`, `tools`, `memory`, `skills`, `backend`, `permissions`, `subagents`, `middleware`, `interrupt_on`, `response_format`, `state_schema`, `context_schema`, `checkpointer`, `store`.
 
-Built-in tools injected on every deep agent (this is broader than the model thinks): `write_todos` (planning; statuses pending/in_progress/completed); the virtual filesystem `ls`, `read_file`, `write_file`, `edit_file`, `delete`, `glob`, `grep`; `execute` (only with a sandbox backend); and `task` (spawns subagents). Built-in *capabilities* beyond tools: skills, memory, automatic summarization and large-result offloading, automatic prompt caching for Anthropic/Bedrock models, human-in-the-loop, and filesystem permissions.
+Built-in tools injected on every deep agent (this is broader than the model thinks): `write_todos` (planning; statuses pending/in_progress/completed); the virtual filesystem `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`; `execute` (only with a sandbox backend); and `task` (spawns subagents). `delete` requires `deepagents>=0.7.a1`, recursive directory deletion requires `>=0.7.a2`, and a backend without deletion support hides it. Built-in *capabilities* beyond tools: skills, memory, automatic summarization and large-result offloading, automatic prompt caching for Anthropic/Bedrock models, human-in-the-loop, and filesystem permissions. Although `model=None` still reaches a deprecated `claude-sonnet-4-6` fallback, current code should always pass an explicit model.
 
 Seeding the virtual filesystem on input needs `create_file_data()` — raw `{name: string}` dicts are rejected:
 
@@ -100,7 +100,7 @@ agent = create_deep_agent(model="anthropic:claude-sonnet-4-6", system_prompt="..
 
 **Wrong prior.** The model hand-assembles `middleware=[SummarizationMiddleware(...), ContextEditingMiddleware(edits=[ClearToolUsesEdit(...)])]` to get summarization and large-result offloading.
 
-**Current API.** Both behaviors are **built in and automatic** in every `create_deep_agent` — you do not add middleware to enable them. Offloading moves tool inputs/results larger than ~20,000 tokens to the backend filesystem, replacing them with a file-path reference plus a first-10-lines preview, and truncates older tool calls as context crosses ~85% of the model window. Summarization triggers at ~85% of the model's `max_input_tokens` (fallback trigger 170,000 tokens / 6 messages), keeps ~10% as recent context, writes the original conversation to the filesystem, and falls back automatically on `ContextOverflowError`. For explicit, on-demand compaction between tasks, pass `create_summarization_tool_middleware` via `middleware=` — it adds a `compact_conversation` tool.
+**Current API.** Both behaviors are **built in and automatic** in every `create_deep_agent` — you do not add middleware to enable them. Tool results above ~20,000 tokens are offloaded to the backend and replaced with a file-path reference plus a first-10-lines preview. File write/edit inputs above the same threshold remain persisted on disk and their older tool calls are truncated to a path pointer once context crosses ~85% of the model window. Summarization triggers at ~85% of the model's `max_input_tokens` (fallback trigger 170,000 tokens / 6 messages), keeps ~10% as recent context, writes the original conversation to the filesystem, and falls back automatically on `ContextOverflowError`. For explicit, on-demand compaction between tasks, import `create_summarization_tool_middleware` from `deepagents.middleware.summarization` and pass the same positional `(model, backend)` used by the agent; the returned middleware adds a `compact_conversation` tool.
 
 **Why it matters.** The correction is subtractive: the idiomatic answer is *do nothing*, plus optional tuning. Hand-adding the middleware duplicates the default stack and can misconfigure the thresholds. (If the model does tune the underlying `SummarizationMiddleware`, note the parameter names are `trigger=("tokens", N)` / `keep=("messages", N)` — cross-reference the LangChain delta in `04`.)
 
@@ -137,7 +137,7 @@ A subagent's `system_prompt` does not inherit from the main agent; `tools`/`mode
 
 **Wrong prior.** Believing no first-class API exists, the model hand-rolls parallelism from LangGraph primitives: several sync `task` calls, `asyncio` task cancellation, `aupdate_state`/`Command(resume=...)` for steering.
 
-**Current API.** Async subagents are a first-class preview feature (deepagents 0.5.0 Python / 1.9.0 JS). Configure them by passing `AsyncSubAgent` specs whose fields are `name` (required), `description` (required), `graph_id` (required; the graph/assistant ID on an Agent Protocol server, matching `langgraph.json` for LangGraph deployments), `url` (optional — omit for in-process ASGI transport, set it for HTTP to a remote Agent Protocol server), and `headers` (optional auth). When async subagents are configured, `create_deep_agent` auto-adds `AsyncSubAgentMiddleware`, which gives the supervisor five tools it calls like any other: `start_async_task` (launch, returns a `task_id` immediately, non-blocking), `check_async_task` (status + result), `update_async_task` (steer a running task with new instructions, same `task_id`), `cancel_async_task` (server-side cancellation), and `list_async_tasks`. Each subagent runs on its own thread on an Agent Protocol server (LangSmith Deployments or self-hosted). Task metadata lives in a dedicated `async_tasks` state channel so IDs survive history compaction.
+**Current API.** Async subagents are a first-class preview feature (deepagents 0.5.0 Python / 1.9.0 JS). Import `AsyncSubAgent` and `create_deep_agent` from `deepagents`, construct specs whose fields are `name` (required), `description` (required), `graph_id` (required; the graph/assistant ID on an Agent Protocol server, matching `langgraph.json` for LangGraph deployments), `url` (optional — omit for in-process ASGI transport, set it for HTTP to a remote Agent Protocol server), and `headers` (optional auth), then pass the specs through `create_deep_agent(subagents=[...])`. The constructor detects them and auto-adds `AsyncSubAgentMiddleware`; do not construct that middleware manually. It gives the supervisor five tools it calls like any other: `start_async_task` (launch, returns a `task_id` immediately, non-blocking), `check_async_task` (status + result), `update_async_task` (steer a running task with new instructions, same `task_id`), `cancel_async_task` (server-side cancellation), and `list_async_tasks`. Each subagent runs on its own thread on an Agent Protocol server (LangSmith Deployments or self-hosted). Task metadata lives in a dedicated `async_tasks` state channel so IDs survive history compaction.
 
 **Why it matters.** This is a whole capability the model does not know exists, so it reconstructs a worse version from lower-level parts. Naming the five tools and the transport model (ASGI co-deploy vs HTTP remote) is the payload.
 
@@ -168,12 +168,12 @@ from deepagents.backends import FilesystemBackend
 agent = create_deep_agent(
     model="anthropic:claude-sonnet-4-6",
     system_prompt="...",
-    skills=["pdf-fill"],
-    backend=FilesystemBackend(root_dir="skills", virtual_mode=True),
+    skills=["skills"],
+    backend=FilesystemBackend(root_dir="/absolute/project", virtual_mode=True),
 )
 ```
 
-Passing `skills=` auto-adds `SkillsMiddleware` (before `FilesystemMiddleware`), which handles progressive disclosure: level-1 name/description into the system prompt at startup, level-2 body read on invoke. A backend alone does not scan for skills — the docs state the SDK only loads the sources you pass in `skills`. With the default `StateBackend`, supply skill file contents at invoke via `invoke(files={...})` using `create_file_data()`; a `FilesystemBackend`/`StoreBackend` loads them from disk/store.
+Here `skills=["skills"]` identifies the top-level source directory containing `/absolute/project/skills/pdf-fill/SKILL.md`; passing the individual `skills/pdf-fill` directory loads nothing. The `SKILL.md` frontmatter `name` must match its parent directory. Passing `skills=` auto-adds `SkillsMiddleware` (before `FilesystemMiddleware`), which handles progressive disclosure: level-1 name/description into the system prompt at startup, level-2 body read on invoke. A backend alone does not scan for skills — the docs state the SDK only loads the sources you pass in `skills`. With the default `StateBackend`, supply skill file contents at invoke via `invoke(files={...})` using `create_file_data()`; a `FilesystemBackend`/`StoreBackend` loads them from disk/store.
 
 **Do not re-teach** the skill *definition* format (`SKILL.md`, YAML `name`/`description`, `scripts/`/`references/`/`assets/`, progressive disclosure) — the model gets that right. Teach only the `skills=` attach mechanism.
 
@@ -246,7 +246,7 @@ agent = create_deep_agent(
 **Current API.** deepagents ships `RubricMiddleware` (deepagents ≥0.6.5, beta) for exactly this:
 
 ```python
-from deepagents.middleware import RubricMiddleware   # verify exact import path against rubric.mdx
+from deepagents.middleware import RubricMiddleware
 agent = create_deep_agent(
     model="anthropic:claude-sonnet-4-6",
     system_prompt="...",
@@ -255,7 +255,7 @@ agent = create_deep_agent(
 result = agent.invoke({"messages": [...], "rubric": "1. Cites sources\n2. Under 200 words"})
 ```
 
-Trigger the self-evaluate/iterate loop by passing a `rubric` string on invoke state; with no `rubric` the middleware is inert. Configure the grader on the middleware, not in prose: `RubricMiddleware(model=, max_iterations=3, system_prompt=<optional grader prompt>, tools=<optional evidence-gathering tools>, on_evaluation=<callback>)`. The grader returns a fixed verdict enum — `satisfied` / `needs_revision` (feedback injected, agent re-runs) / `max_iterations_reached` / `failed` / `grader_error` — and manages the loop-back itself; you do not parse PASS/FAIL. Observe via the `on_evaluation` callback or `rubric_evaluation_start`/`rubric_evaluation_end` events on `stream.custom`. A `RubricCodeGenerationMiddleware` variant exists for vetted code generation.
+Trigger the self-evaluate/iterate loop by passing a `rubric` string on invoke state; with no `rubric` the middleware is inert. Configure the grader on the middleware, not in prose: `RubricMiddleware(model=, max_iterations=3, system_prompt=<optional grader prompt>, tools=<optional evidence-gathering tools>, on_evaluation=<callback>)`. Each grader pass reports `satisfied`, `needs_revision` (feedback injected, agent re-runs), `failed`, or `grader_error`; you do not parse PASS/FAIL. When the cap is reached, the last pass still reports `needs_revision` and terminal private state `_rubric_status` becomes `max_iterations_reached`. Observe passes via the `on_evaluation` callback or `rubric_evaluation_start`/`rubric_evaluation_end` events on `stream.custom`. Code-generation examples use the same `RubricMiddleware`, not a separate middleware class.
 
 **Why it matters.** The model's stated premise ("no primitive exists") is false, so it builds a brittle hand-rolled loop. Naming the middleware and the state-triggered `rubric` mechanism replaces the whole thing.
 
@@ -270,7 +270,7 @@ Trigger the self-evaluate/iterate loop by passing a `rubric` string on invoke st
 **Current API.** Harness profiles (Beta) tune the harness per provider without touching the `create_deep_agent` call site:
 
 ```python
-from deepagents import HarnessProfile, register_harness_profile   # verify import against profiles.mdx
+from deepagents import HarnessProfile, register_harness_profile
 register_harness_profile("anthropic", HarnessProfile(system_prompt_suffix="Think step by step."))
 register_harness_profile("openai", HarnessProfile(base_system_prompt="You are concise."))
 # create_deep_agent(model="anthropic:...") now applies the anthropic profile automatically
@@ -289,7 +289,7 @@ register_harness_profile("openai", HarnessProfile(base_system_prompt="You are co
 **Current API.** The feature is `CodeInterpreterMiddleware` with programmatic tool calling (PTC), Beta. Install `deepagents[quickjs]` (`langchain-quickjs>=0.2.0`, Python ≥3.11), then:
 
 ```python
-from deepagents.middleware import CodeInterpreterMiddleware
+from langchain_quickjs import CodeInterpreterMiddleware
 agent = create_deep_agent(
     model="anthropic:claude-sonnet-4-6",
     system_prompt="...",
@@ -324,7 +324,7 @@ try:
                               backend=LangSmithSandbox(sandbox=sb))
     result = agent.invoke({"messages": [{"role": "user", "content": "analyze data.csv"}]})
 finally:
-    sb.delete()   # explicit lifecycle
+    client.delete_sandbox(sb.name)   # explicit lifecycle
 ```
 
 Other backends wrap each provider's SDK: `langchain_daytona.DaytonaSandbox`, `langchain_e2b.E2BSandbox`, `langchain_modal.ModalSandbox`, `langchain_runloop.RunloopSandbox`, `langchain_vercel_sandbox.VercelSandbox`, `langchain_agentcore_codeinterpreter.AgentCoreSandbox`, `langchain_nvidia_openshell.OpenShellSandbox`; `LocalShellBackend` is for local dev. Move data across the boundary with `backend.upload_files([(path, bytes)])` / `backend.download_files([paths])`, not agent tools. For pandas/numpy data analysis use a sandbox backend; the QuickJS interpreter (topic 13) is a different, in-loop feature and is not the tool for that.
@@ -352,19 +352,19 @@ agent = create_deep_agent(model="anthropic:claude-sonnet-4-6", tools=tools, syst
 result = await agent.ainvoke({"messages": [{"role": "user", "content": "..."}]})
 ```
 
-`get_tools()` returns LangChain tools directly — the old `async with client as session` context-manager pattern is not needed. The current HTTP transport value is `"http"` (streamable-http); `"streamable_http"` is only an accepted alias, not the documented idiom. And, as everywhere, `system_prompt=` not `instructions=`.
+`get_tools()` returns LangChain tools directly and is stateless by default. For a genuinely stateful server, the current explicit session form is `async with client.session("server_name") as session:` followed by loading tools from that session; the old `async with client as session` form is obsolete. The current HTTP transport value is `"http"` (streamable-http); `"streamable_http"` is only an accepted alias, not the documented idiom. And, as everywhere, `system_prompt=` not `instructions=`.
 
 **Do not re-teach** the `MultiServerMCPClient(...).get_tools()` shape — the model gets it right.
 
-**Source.** `deepagents/mcp.mdx`, `overview.mdx`, `deepagents/code/mcp-tools`.
+**Source.** `langchain/mcp.mdx`, `deepagents/overview.mdx`, `deepagents/code/mcp-tools.mdx`. (`deepagents/mcp.mdx` is only a redirect stub in this snapshot.)
 
 ---
 
 ## 16. Production deployment (probe C13)
 
-**Wrong prior.** The model correctly names `langgraph.json` + the CLI + `langgraph_sdk`, but frames the recommended path as the stale "LangGraph Platform / LangGraph Server" and omits per-run `context=`.
+**Wrong prior.** The model correctly names `langgraph.json` + the CLI + `langgraph_sdk`, but frames the recommended path using former hosted-product branding and omits per-run `context=`.
 
-**Current API (teach only the delta).** The recommended path is **Managed Deep Agents** — a LangSmith CLI-first hosted runtime (private preview) for creating, running, and operating deep agents; for custom application code, routes, or advanced auth, use a **LangSmith Deployment** directly. The branding is now "LangSmith Deployments" (formerly "LangGraph Platform / Cloud / Server"). Managed deploy uses `langgraph deploy`; self-host still uses `langgraph build` → Docker. Every production invocation should pass **both** `thread_id` (conversation/checkpoints, in `config["configurable"]`) **and** `context=` (per-run data, defined by `context_schema`, not `config.configurable`):
+**Current API (teach only the delta).** The recommended path is **Managed Deep Agents** — a LangSmith CLI-first hosted runtime (private preview) for creating, running, and operating deep agents; for custom application code, routes, or advanced auth, use a **LangSmith Deployment** directly. "LangGraph Platform" and "LangGraph Cloud" are former hosted-product names; **LangGraph Server** remains a valid technical runtime term rather than the product brand. The Deep Agents CLI uses `deepagents deploy`, direct graph-factory deployment examples use `langgraph deploy`, and self-hosted images use `langgraph build` → Docker. Every production invocation should pass **both** `thread_id` (conversation/checkpoints, in `config["configurable"]`) **and** `context=` (per-run data, defined by `context_schema`, not `config.configurable`):
 
 ```python
 from langgraph_sdk import get_client
@@ -381,4 +381,4 @@ A deployment injects the checkpointer and store, so do not pass your own.
 
 **Do not re-teach** the `langgraph.json` shape (`dependencies`/`graphs`/`env`), `langgraph dev`/`langgraph build`, or the `get_client`/`threads.create`/`runs.stream` API — the model reproduces those correctly. Teach only: the Managed Deep Agents recommendation, the LangSmith Deployments naming, and the `context=` argument.
 
-**Source.** `deepagents/going-to-production.mdx`, `comparison.mdx`.
+**Source.** `deepagents/going-to-production.mdx`, `comparison.mdx`, `contributing/code.mdx`.

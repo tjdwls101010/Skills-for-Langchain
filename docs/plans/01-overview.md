@@ -15,18 +15,18 @@ This was decided by measurement, not by guessing, because a model cannot reliabl
 - **Axis 1 — doc-novelty survey** (`research/novelty-catalog.md`): a read of the docs classifying every topic as NOVEL / CHANGED / KNOWN, with the exact API deltas.
 - **Axis 2 — blind knowledge probes** (`research/probe-results.md`): 38 total tasks (26 + a 12-task round-2) in which subagents with no doc access wrote the Python they would actually produce, then a doc-armed grader classified each answer as `correct` (exclude), `outdated_confident` (highest value), `partial`, or `unknown`.
 
-Crossing the two axes is what produced the final include list: the survey said much more was "new" than the model actually gets wrong, and the probes corrected that down to what is genuinely missing. The single most important empirical result is that **7 of the first 26 topics graded `correct` and were removed from scope** — the model already knows `create_agent`, custom middleware, structured output, `ToolRuntime`, the runtime-context API, LangGraph runtime context, and the functional API. Do not re-teach these; a skill that restates what the model already does correctly wastes context and signals distrust, which measurably degrades the model.
+Crossing the two axes is what produced the final include list: the survey said much more was "new" than the model actually gets wrong, and the probes corrected that down to what is genuinely missing. Final Codex review corrected one baseline classification: A2's middleware lifecycle was current, but its `ModelRequest.override(system_prompt=...)` call is a deprecated compatibility path. The stable Round-1 result is therefore **6 of 26 topics excluded** — the model already knows `create_agent`, structured output, `ToolRuntime`, the runtime-context API, LangGraph runtime context, and the functional API. Do not re-teach those measured-correct topics; a skill that restates what the model already does correctly wastes context and signals distrust.
 
 ## The final content (measured)
 
 The exact per-topic deltas, with the wrong prior each corrects and the current correct API, are specified in `03` (Deep Agents) and `04` (LangChain + LangGraph). At a glance:
 
 - **Cross-cutting, belongs in the SKILL.md body** (applies on essentially every Deep Agents task): `create_deep_agent(system_prompt=...)` — **not** `instructions=`, which raises `TypeError` and which the model used in almost every Deep Agents probe; model IDs in this ecosystem are real/future (`claude-sonnet-4-6`, `gpt-5.5`) and must never be "corrected"; `model=` is passed explicitly as a `provider:model` string; `create_agent` (not `create_react_agent`/`AgentExecutor`) is the agent baseline.
-- **LangChain — 5 deltas:** `SummarizationMiddleware` params, supervisor→agent-as-tool, `ModelFallbackMiddleware`, `ToolCallLimitMiddleware`, `ProviderToolSearchMiddleware`.
+- **LangChain — 6 deltas:** dynamic prompt rewriting, `SummarizationMiddleware` params, supervisor→agent-as-tool, `ModelFallbackMiddleware`, `ToolCallLimitMiddleware`, `ProviderToolSearchMiddleware`.
 - **LangGraph — 4 deltas:** event streaming (v3), declarative error handling, interrupts (thin), `DeltaChannel`.
 - **Deep Agents — 16 topics:** core + built-ins, backend security, long-term memory, subagents, async subagents, context engineering, skills, HITL, permissions, harness profiles, sandboxes, production, MCP, rubric middleware, dynamic subagents, interpreters/PTC.
 
-**Explicitly excluded because the model was measured getting them right:** `create_agent` basics, custom middleware (`wrap_model_call`), agent structured output, `ToolRuntime`, per-invocation context, LangGraph runtime context, functional API, `PIIMiddleware`, `ContextEditingMiddleware`, `LLMToolSelectorMiddleware`, LangGraph `durability=`, Postgres persistence with `EncryptedSerializer`. These are recorded as "verified current as of the April-2026 snapshot" rather than silently dropped, so a future refresh knows they were checked and can re-check them.
+**Explicitly excluded because the model was measured getting them right:** `create_agent` basics, agent structured output, `ToolRuntime`, per-invocation context, LangGraph runtime context, functional API, `PIIMiddleware`, `ContextEditingMiddleware`, `LLMToolSelectorMiddleware`, LangGraph `durability=`, Postgres persistence with `EncryptedSerializer`. These are recorded as "verified current as of the April-2026 snapshot" rather than silently dropped, so a future refresh knows they were checked and can re-check them.
 
 ## Structure of the skill
 
@@ -37,7 +37,7 @@ One skill, three files (rationale in `00-decision-log.md` D13):
 ├── SKILL.md                          # trigger; 3-tier mental model; cross-cutting gotchas; routing to the two references
 └── references/
     ├── deepagents.md                 # the bulk: 16 Deep Agents topics
-    └── langchain-langgraph.md        # the thin deltas: 5 LangChain + 4 LangGraph
+    └── langchain-langgraph.md        # the thin deltas: 6 LangChain + 4 LangGraph
 ```
 
 `02` specifies SKILL.md exactly (frontmatter and body). `03` and `04` specify the two reference files. Keep Deep Agents as one file: its topics interrelate (a single "build me a deep agent that does X" task routinely spans model + backend + subagents + memory), so co-locating them preserves the connective tissue and gives the model exactly one file to open. Sub-split only if `deepagents.md` becomes genuinely unwieldy while authoring — and if so, split along the core-vs-advanced seam noted in `03`, not by raw length.
@@ -66,7 +66,7 @@ Defined concretely in `05`. The spine is the **before/after probe**: the 38 prob
 - `01-overview.md` — this file.
 - `02-skill-md-spec.md` — the exact SKILL.md (frontmatter + body).
 - `03-deepagents-content.md` — the `deepagents.md` reference: 16 topics, each with wrong prior, current API, code, source citation.
-- `04-langchain-langgraph-content.md` — the `langchain-langgraph.md` reference: 9 deltas.
+- `04-langchain-langgraph-content.md` — the `langchain-langgraph.md` reference: 10 deltas.
 - `05-validation.md` — the before/after probe protocol, trigger tests, and `validate_harness.py` gate.
 - `06-implementation-checklist.md` — the ordered step list for the next session.
 - `research/` — the raw evidence (survey catalog, probe results, provenance).

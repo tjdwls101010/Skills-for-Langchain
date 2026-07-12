@@ -45,7 +45,7 @@ Keep the body to roughly this length. It is loaded on every trigger, so anything
 ```markdown
 # LangChain ecosystem — current APIs and gotchas
 
-This skill carries only what has **changed or is new** in the LangChain ecosystem relative to older knowledge — the deltas the model tends to get confidently wrong. It does not restate the parts the model already handles correctly (basic `create_agent` usage, custom middleware, `ToolRuntime`, structured output, LangGraph runtime context and the functional API, `PIIMiddleware`/`ContextEditingMiddleware`, `durability=`, Postgres persistence). If your code already matches the current API for one of those, trust it.
+This skill carries only what has **changed or is new** in the LangChain ecosystem relative to older knowledge — the deltas the model tends to get confidently wrong. It does not restate the parts the model already handles correctly (basic `create_agent` usage, `ToolRuntime`, structured output, LangGraph runtime context and the functional API, `PIIMiddleware`/`ContextEditingMiddleware`, `durability=`, Postgres persistence). If your code already matches the current API for one of those, trust it.
 
 Verified against LangChain 1.x / LangGraph 1.x / deepagents (Python) — snapshot April 2026. See "Staying current" at the bottom before trusting this on a much newer release.
 
@@ -64,7 +64,7 @@ Verified against LangChain 1.x / LangGraph 1.x / deepagents (Python) — snapsho
 ## Which reference to open
 
 - **references/deepagents.md** — anything with `deepagents` / `create_deep_agent`: built-in tools, backends and filesystem security, subagents (sync/async/dynamic), memory, context engineering, skills, human-in-the-loop, permissions, harness profiles, sandboxes and interpreters, rubric middleware, MCP, and production deployment.
-- **references/langchain-langgraph.md** — the handful of `create_agent`/LangGraph deltas: `SummarizationMiddleware` parameters, the deprecated supervisor pattern, `ModelFallbackMiddleware`, `ToolCallLimitMiddleware`, `ProviderToolSearchMiddleware`, event streaming (`stream_events` v3), declarative error handling, `interrupt` nuances, and `DeltaChannel`.
+- **references/langchain-langgraph.md** — the handful of `create_agent`/LangGraph deltas: dynamic system-prompt rewriting with `@dynamic_prompt`/`system_message`, `SummarizationMiddleware` parameters, the deprecated supervisor pattern, `ModelFallbackMiddleware`, `ToolCallLimitMiddleware`, `ProviderToolSearchMiddleware`, event streaming (`stream_events` v3), declarative error handling, `interrupt` nuances, and `DeltaChannel`.
 
 ## Staying current
 

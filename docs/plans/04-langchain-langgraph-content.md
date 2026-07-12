@@ -1,14 +1,38 @@
 # 04 — references/langchain-langgraph.md content specification
 
-This is the spec for the thin reference file: 5 LangChain deltas and 4 LangGraph deltas. It is short by design — the probes showed the model already writes most modern LangChain-core and LangGraph-runtime code correctly, so this file carries only the specific misses. Same authoring rules as `03`: lead with the wrong prior, teach only the delta, name the reason, cite and verify the source.
+This is the spec for the thin reference file: 6 LangChain deltas and 4 LangGraph deltas. It is short by design — the probes showed the model already writes most modern LangChain-core and LangGraph-runtime code correctly, so this file carries only the specific misses. Same authoring rules as `03`: lead with the wrong prior, teach only the delta, name the reason, cite and verify the source.
 
-Open the file with a one-line scope note plus a version stamp ("Verified against LangChain 1.x / LangGraph 1.x … April 2026"), then a LangChain section and a LangGraph section. Put a one-line reminder at the top that the excluded topics (custom middleware, `ToolRuntime`, structured output, `PIIMiddleware`, `ContextEditingMiddleware`, `LLMToolSelectorMiddleware`, runtime context, functional API, `durability=`, Postgres persistence) are deliberately absent because the model already handles them.
+Open the file with a one-line scope note plus a version stamp ("Verified against LangChain 1.x / LangGraph 1.x … April 2026"), then a LangChain section and a LangGraph section. Put a one-line reminder at the top that the excluded topics (`ToolRuntime`, structured output, `PIIMiddleware`, `ContextEditingMiddleware`, `LLMToolSelectorMiddleware`, runtime context, functional API, `durability=`, Postgres persistence) are deliberately absent because the model already handles them.
 
 ---
 
 # LangChain deltas
 
-## L1. SummarizationMiddleware parameters (probe A4)
+## L1. Dynamic system-prompt rewriting (probe A2)
+
+**Wrong prior.** The model knows the current middleware lifecycle but emits `request.override(system_prompt=...)` as the preferred new-code path. That compatibility argument is deprecated even though `create_agent(system_prompt=...)` remains current.
+
+**Current API.** For a prompt-only rewrite, prefer the focused `@dynamic_prompt` middleware:
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.middleware import ModelRequest, dynamic_prompt
+
+@dynamic_prompt
+def role_prompt(request: ModelRequest) -> str:
+    role = request.state.get("role", "generalist")
+    return f"You are the {role} specialist."
+
+agent = create_agent(model="anthropic:claude-sonnet-4-6", tools=[], middleware=[role_prompt])
+```
+
+When full `wrap_model_call` control is genuinely needed, use the immutable replacement path `request.override(system_message=SystemMessage(...))`, and preserve `request.system_message.content_blocks` when augmenting rather than replacing the existing prompt. Do not emit `ModelRequest.override(system_prompt=...)` in new middleware code. This deprecation applies to `ModelRequest.override`; the top-level `create_agent(system_prompt=...)` constructor argument is still the current API.
+
+**Source.** `langchain/middleware/custom.mdx`, `langchain/context-engineering.mdx`, `langchain/agents.mdx`.
+
+---
+
+## L2. SummarizationMiddleware parameters (probe A4)
 
 **Wrong prior.** The model wires `SummarizationMiddleware` correctly (right import, right `middleware=[...]` attachment) but configures it with the deprecated `max_tokens_before_summary=` and `messages_to_keep=`.
 
@@ -28,7 +52,7 @@ middleware = [SummarizationMiddleware(model="anthropic:claude-sonnet-4-6",
 
 ---
 
-## L2. Multi-agent: the supervisor pattern is deprecated (probe A7)
+## L3. Multi-agent: the supervisor pattern is deprecated (probe A7)
 
 **Wrong prior.** At high confidence the model builds the system with `create_supervisor(agents=[...]).compile()` from `langgraph-supervisor`, over sub-agents made with `create_react_agent`, and calls this "the current recommended multi-agent pattern."
 
@@ -56,7 +80,7 @@ Alternatively, a single-dispatch pattern: one `@tool def task(agent_name: str, d
 
 ---
 
-## L3. ModelFallbackMiddleware (probe R3)
+## L4. ModelFallbackMiddleware (probe R3)
 
 **Wrong prior.** The model wraps the model runnable in `primary.with_fallbacks([secondary])` and passes it to `create_react_agent`, presenting `.with_fallbacks()` as the current built-in mechanism.
 
@@ -76,7 +100,7 @@ agent = create_agent(model="anthropic:claude-sonnet-4-6", tools=[],
 
 ---
 
-## L4. ToolCallLimitMiddleware semantics (probe R4)
+## L5. ToolCallLimitMiddleware semantics (probe R4)
 
 **Wrong prior.** The model uses `ModelCallLimitMiddleware` correctly but assumes `ToolCallLimitMiddleware.exit_behavior` mirrors it (`"end"`/`"error"`), applying `"end"` to a global limiter.
 
@@ -96,7 +120,7 @@ middleware = [
 
 ---
 
-## L5. ProviderToolSearchMiddleware — deferred tool loading (probe R6)
+## L6. ProviderToolSearchMiddleware — deferred tool loading (probe R6)
 
 **Wrong prior.** The model hand-rolls Anthropic's provider-side tool search at the raw-API level — `ChatAnthropic(betas=[...])` plus a guessed server-tool dict in `tools=` and a `tool.metadata["defer_loading"]` flag.
 
@@ -152,7 +176,7 @@ builder.add_node("charge", charge_fn, retry_policy=RetryPolicy(max_attempts=3), 
 builder.set_node_defaults(error_handler=handle)   # graph-wide default
 ```
 
-`add_node(..., error_handler=fn)` where `fn(state, error: NodeError) -> Command` runs compensation/saga routing (langgraph ≥1.2). It fires only after the retry policy is exhausted (or immediately if there is no retry policy) — retry and error handling are decoupled and configured independently. `NodeError` is a frozen dataclass with fields `node: str` and `error: BaseException`; the `error: NodeError` parameter is injected by type annotation (the same mechanism as `runtime: Runtime`) and is opt-in — a handler can also be `(state)` or `(state, runtime)`. `interrupt()` is not routed to the handler. `set_node_defaults(retry_policy=, error_handler=, timeout=, cache_policy=)` applies these graph-wide; error-handler nodes are excluded from the `error_handler` and `cache_policy` defaults. (JS: `errorHandler` on `StateGraph.addNode` requires `@langchain/langgraph>=1.4.0`.)
+`add_node(..., error_handler=fn)` where `fn(state, error: NodeError) -> Command` runs compensation/saga routing and requires `langgraph>=1.2`; `NodeError` and `set_node_defaults` belong to the same version-gated surface. It fires only after the retry policy is exhausted (or immediately if there is no retry policy) — retry and error handling are decoupled and configured independently. `NodeError` is a frozen dataclass with fields `node: str` and `error: BaseException`; the `error: NodeError` parameter is injected by type annotation (the same mechanism as `runtime: Runtime`) and is opt-in — a handler can also be `(state)` or `(state, runtime)`. `interrupt()` is not routed to the handler. `set_node_defaults(retry_policy=, error_handler=, timeout=, cache_policy=)` applies these graph-wide; error-handler nodes are excluded from the `error_handler` and `cache_policy` defaults. (JS: `errorHandler` on `StateGraph.addNode` requires `@langchain/langgraph>=1.4.0`.)
 
 **Source.** `langgraph/thinking-in-langgraph.mdx`, `fault-tolerance.mdx`.
 

@@ -1,16 +1,16 @@
-# Probe results (axis 2) — what Claude actually gets wrong
+# Probe results (axis 2) — measured knowledge deltas
 
-Empirical measurement, not self-report. 26 blind tasks (Opus 4.8, Jan-2026 cutoff, no docs/web) → doc-armed grading against the April-2026 docs. Full per-task detail: `../../../scratchpad/probe-compact.json` (and the raw workflow output). Verdict key: `correct` = Claude already knows it (EXCLUDE) · `outdated_confident` = confidently wrong (HIGHEST value) · `partial` = right scaffolding, wrong specifics · `unknown` = didn't know.
+Empirical measurement, not self-report. 26 blind tasks (Opus 4.8, Jan-2026 cutoff, no docs/web) → doc-armed grading against the April-2026 docs. Exact task prompts and compact per-task baseline records are preserved in `probe-round1-tasks.json` and `probe-round2-tasks.json`. Verdict key: `correct` = Claude already knows it (EXCLUDE) · `outdated_confident` = confidently wrong (HIGHEST value) · `partial` = right scaffolding, wrong specifics · `unknown` = didn't know.
 
 ## Headline
 
 | verdict | count | tasks |
 |---|---|---|
-| correct (exclude) | 7 | A1, A2, A3, A5, A6, B1, B4 |
+| correct (exclude) | 6 | A1, A3, A5, A6, B1, B4 |
 | partial (include) | 15 | A4, B2, B3, C1–C8, C10, C11, C13, C14 |
-| outdated_confident (include) | 4 | A7, B5, C9, C12 |
+| outdated_confident (include) | 5 | A2, A7, B5, C9, C12 |
 
-**19 of 26 include; 7 exclude.** The doc-survey (axis 1) flagged far more as NOVEL/CHANGED than Claude actually gets wrong — exactly why empirical measurement was necessary. **Claude already writes modern LangChain-core and LangGraph-runtime code correctly.** The real gap is **DeepAgents (all 14 tasks flagged) plus ~5 specific LangChain/LangGraph deltas.**
+**20 of 26 include; 6 exclude.** The original grader classified A2 as correct, but final independent Codex review against the current docs found that its `ModelRequest.override(system_prompt=...)` call is deprecated compatibility behavior. The lifecycle was current; that one confidently emitted parameter was not. The real gap is **DeepAgents (all 14 tasks flagged) plus 6 LangChain and 4 LangGraph deltas after Round 2.**
 
 ## The dominant cross-cutting gotcha
 
@@ -21,7 +21,6 @@ Empirical measurement, not self-report. 26 blind tasks (Opus 4.8, Jan-2026 cutof
 | id | topic | why excluded |
 |---|---|---|
 | A1 | `create_agent` basic tool-calling agent | used `create_agent` from `langchain.agents` correctly; NOT the deprecated `create_react_agent`/`AgentExecutor` |
-| A2 | custom middleware (`wrap_model_call`) | subclassed `AgentMiddleware`, `wrap_model_call(request, handler)`, `request.override(...)` — all current; even named `@dynamic_prompt` |
 | A3 | agent structured output | `response_format=` → `result["structured_response"]`, `ToolStrategy`/`ProviderStrategy` — correct |
 | A5 | tool runtime access | unified `ToolRuntime` param (`runtime.context/.store/.state`) — correct |
 | A6 | per-invocation runtime context | `context_schema=` + `context=` at invoke, read `runtime.context` — correct |
@@ -32,7 +31,8 @@ Empirical measurement, not self-report. 26 blind tasks (Opus 4.8, Jan-2026 cutof
 
 ## INCLUDE — the delta the skill must carry
 
-### LangChain (2)
+### LangChain (3)
+- **A2 — dynamic system-prompt rewriting (medium, outdated_confident after re-audit).** Prefer `@dynamic_prompt` for a pure prompt rewrite. If `wrap_model_call` is needed, use `request.override(system_message=SystemMessage(...))`; `ModelRequest.override(system_prompt=...)` is deprecated compatibility behavior even though `create_agent(system_prompt=...)` remains current.
 - **A4 — `SummarizationMiddleware` params (high).** Deprecated `max_tokens_before_summary`/`messages_to_keep`/`summary_prefix` → `trigger=("tokens",N)` / `keep=("messages",N)` ContextSize tuples (also `("fraction",…)`, multi-threshold dicts). Mechanism/import known; only the params are wrong.
 - **A7 — multi-agent (high, outdated_confident).** Claude reached for `create_supervisor`/`langgraph-supervisor` and called it "current." → **deprecated/unmaintained.** Current: agent-as-tool (wrap each `create_agent` sub-agent in a `@tool`) or single-dispatch `task(agent_name, description)` over a registry. No `.compile()` (create_agent returns a compiled graph).
 
@@ -47,9 +47,9 @@ Per topic, the **specific delta** (Claude's scaffolding was often right — carr
 - **C3 — backend security.** `FilesystemBackend(root_dir=..., virtual_mode=True)` — **default `False` = no sandbox**; wrap in `CompositeBackend`.
 - **C4 — long-term memory.** `CompositeBackend(default=StateBackend(), routes={"/memories/": StoreBackend(namespace=lambda rt: ...)})`; `StoreBackend` needs a namespace factory (multi-user isolation); pass `store=`.
 - **C5 — subagents.** Subagent dict key `system_prompt` not `prompt`; `CompiledSubAgent(..., runnable=graph)` not `graph=`.
-- **C6 — async subagents (Claude didn't know).** First-class `AsyncSubAgent` specs → `AsyncSubAgentMiddleware` exposes 5 tools (`start/check/update/cancel/list_async_task`); steer via `update_async_task`, not hand-rolled asyncio.
+- **C6 — async subagents (Claude didn't know).** First-class `AsyncSubAgent` specs → `AsyncSubAgentMiddleware` exposes 5 tools (`start/check/update/cancel/list_async_tasks`); steer via `update_async_task`, not hand-rolled asyncio.
 - **C7 — context engineering.** Summarization + >20k-token offloading are **built-in/automatic** (don't hand-add middleware); thresholds (85% window); optional `create_summarization_tool_middleware`.
-- **C8 — skills (Claude didn't know attach).** `skills=[paths]` param → `SkillsMiddleware` auto-added; a `FilesystemBackend` root alone loads nothing. (SKILL.md format itself Claude knows — exclude that part.)
+- **C8 — skills (Claude didn't know attach).** `skills=[paths]` identifies top-level source directories → `SkillsMiddleware` auto-added; for `root_dir="/absolute/project"` and `skills/pdf-fill/SKILL.md`, use `skills=["skills"]`, not the individual skill directory. A `FilesystemBackend` root alone loads nothing. (SKILL.md format itself Claude knows — exclude that part.)
 - **C9 — HITL (outdated_confident).** `interrupt_on={tool: {"allowed_decisions":[...]}}` not `interrupt_config`; decisions `approve/edit/reject/respond`; resume `Command(resume={"decisions":[...]})`, `version="v2"`; detect via `result.interrupts`.
 - **C10 — permissions (Claude didn't know).** `create_deep_agent(permissions=[FilesystemPermission(operations=[...], paths=[globs], mode="allow"|"deny"|"interrupt")])` — a list, not a backend dict; first-match-wins; `from deepagents import FilesystemPermission`.
 - **C11 — harness profiles (Claude didn't know).** `HarnessProfile(...)` + `register_harness_profile("anthropic"|"provider:model", ...)`; ships built-in Anthropic/OpenAI profiles; tunes without touching the call site.
@@ -90,10 +90,35 @@ Verdicts: **5 correct (exclude), 7 include** (2 outdated_confident, 4 partial, 1
 
 **Cross-cutting → SKILL.md body:** `system_prompt=` not `instructions=` (deepagents); model IDs are real/future (don't "correct"); pass `model=` explicitly as `provider:model`; `create_agent` is the agent baseline (not `create_react_agent`/`AgentExecutor`).
 
-**LangChain deltas (5):** A4 SummarizationMiddleware params · A7 supervisor→agent-as-tool · R3 ModelFallbackMiddleware · R4 ToolCallLimitMiddleware · R6 ProviderToolSearchMiddleware.
+**LangChain deltas (6):** A2 dynamic prompt rewriting · A4 SummarizationMiddleware params · A7 supervisor→agent-as-tool · R3 ModelFallbackMiddleware · R4 ToolCallLimitMiddleware · R6 ProviderToolSearchMiddleware.
 
 **LangGraph deltas (4):** B5 event streaming (stream_events v3) · B3 declarative error handling · B2 interrupts (thin) · R8 DeltaChannel.
 
 **DeepAgents (16) — the bulk:** C1/C2 core+built-ins · C3 backend security · C4 long-term memory · C5 subagents · C6 async subagents · C7 context engineering · C8 skills · C9 HITL · C10 permissions · C11 harness profiles · C12 sandboxes · C13 production · C14 MCP · R10 rubric · R11 dynamic subagents · R12 interpreters/PTC.
 
-**Excluded (verified current, April-2026):** create_agent basics, custom middleware, structured output, ToolRuntime, context API, PII/ContextEditing/ToolSelector middleware, LangGraph runtime-context, functional API, durability=, Postgres persistence.
+**Excluded (verified current, April-2026):** create_agent basics, structured output, ToolRuntime, context API, PII/ContextEditing/ToolSelector middleware, LangGraph runtime-context, functional API, durability=, Postgres persistence.
+
+## After — generated-skill delta closure (2026-07-12)
+
+The full Round-1 and Round-2 after passes injected the generated `SKILL.md` plus the relevant generated reference into each original task and kept the original doc-armed grader prompt/schema. The targeted A2/C6/C8 repair pass used concise hand-written correction context and a shorter same-schema grader, so it is recorded separately as repair confirmation rather than strict identical-protocol closure. E2E was intentionally not run because the user explicitly declined it.
+
+| suite | first after pass | repair | final |
+|---|---:|---|---:|
+| Round 1 (26 tasks) | 23 correct, 3 partial | A2 was initially treated as framing-only, then reclassified and repaired; C6 and C8 reference details repaired | 20/20 includes correct after the final Codex gate; 6/6 exclusions unchanged |
+| Round 2 (12 tasks) | 12/12 correct | none | 12/12 correct |
+
+The first Round-1 pass exposed two real reference gaps and one initially misclassified API delta:
+
+- **C6:** the reference described async subagents but did not say to import `AsyncSubAgent` from `deepagents`, pass those specs directly through `create_deep_agent(subagents=[...])`, and rely on automatic `AsyncSubAgentMiddleware` attachment. The reference was repaired and the targeted retry graded `correct`.
+- **C8:** the original planning record incorrectly treated an individual skill directory as a `skills=` entry. Official docs define each entry as a top-level source directory whose child directories contain skills. The generated reference, plan, and compact baseline record were corrected; the targeted retry graded `correct`.
+- **A2:** the historical repair-context retry accepted `request.override(system_prompt=...)`, but two independent Codex graders later confirmed from the current docs that this is deprecated compatibility behavior. The generated reference now teaches `@dynamic_prompt` for prompt-only rewriting and `request.override(system_message=SystemMessage(...))` for the full wrapper path. A fresh current-file Codex attempt then received two independent `correct` verdicts.
+
+Evidence tiers:
+
+- **Strict full-suite result using generated files and the original grader:** 35/38 correct. Under the corrected baseline this covers 24/27 include-list flips and 11/11 measured-correct exclusions; residuals were A2, C6, and C8.
+- **Separately labeled repair-context result:** A2, C6, and C8 each graded `correct` after the prompt/reference repairs — 3/3.
+- **Combined observed result:** 38/38 answers graded `correct` across the two evidence methods. This is not claimed as a 100% strict identical-protocol closure.
+- **Historical faithful residual retry:** attempted with the actual then-current skill/reference content and original grader prompt/schema, but Claude returned HTTP 429 because the session limit was exhausted. It produced no countable result.
+- **Final user-approved Codex-only residual gate:** isolated current-file attempts for A2, C6, and C8 recorded exact generated-file hashes; two independent official-doc graders per task all returned `correct`; a separate synthesis reviewer verified hash agreement and no material residuals. This is the final closure evidence, preserved in `probe-codex-results.json`. No Claude process was used for this gate.
+
+The completed after-run IDs were `wf_0f3786fc-b2b` (Round 1 first pass), `wf_62c4ca76-463` (Round 2), and `wf_472d079a-7ab` (A2/C6/C8 repair-context retry). Exact prompts remain in the two task JSON files, compact after evidence is in `probe-after-results.json`, and after-probe construction is documented in `../05-validation.md`.

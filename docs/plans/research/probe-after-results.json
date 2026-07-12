@@ -1,0 +1,496 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-07-12",
+  "source_runs": {
+    "round1_generated_files_original_grader": {
+      "run_id": "wf_0f3786fc-b2b",
+      "status": "completed"
+    },
+    "round2_generated_files_original_grader": {
+      "run_id": "wf_62c4ca76-463",
+      "status": "completed"
+    },
+    "residual_repair_context_variant": {
+      "run_id": "wf_472d079a-7ab",
+      "status": "completed"
+    }
+  },
+  "protocol_note": "Round 1 and Round 2 are historical Claude runs using the generated skill/reference files and original doc-armed grader. The repair-context run is separately labeled. By explicit user decision, final residual closure used only isolated Codex subagents, two independent official-doc graders per task, current-file hashes, and a separate synthesis review; no Claude process was invoked for that final gate.",
+  "strict_generated_files_result": {
+    "correct": 35,
+    "total": 38,
+    "residual_ids": [
+      "A2",
+      "C6",
+      "C8"
+    ],
+    "include_flips": 24,
+    "include_total": 27,
+    "exclusion_regressions_clear": 11,
+    "exclusion_total": 11
+  },
+  "repair_context_result": {
+    "correct": 3,
+    "total": 3,
+    "ids": [
+      "A2",
+      "C6",
+      "C8"
+    ]
+  },
+  "combined_observed_result": {
+    "correct": 38,
+    "total": 38,
+    "qualification": "historical result combining strict full-suite results with the separately labeled repair-context rerun; final residual authority is the Codex-only gate below"
+  },
+  "final_reclassified_baseline_result": {
+    "include_correct": 27,
+    "include_total": 27,
+    "exclusions_correct": 11,
+    "exclusion_total": 11,
+    "qualification": "35 non-residual tasks retain their historical full-suite verdicts; A2, C6, and C8 are closed by current-file Codex consensus"
+  },
+  "historical_faithful_residual_retry": {
+    "status": "not_counted",
+    "reason": "The historical Claude attempt returned HTTP 429 at its session limit, and the user later replaced the final residual method with Codex-only review.",
+    "attempted_with": "the then-current SKILL.md and reference content plus the original grader prompt/schema",
+    "counted_in_results": false
+  },
+  "codex_final_validation": {
+    "method": "isolated current-file attempt plus two independent official-doc graders per task and one synthesis reviewer",
+    "ids": [
+      "A2",
+      "C6",
+      "C8"
+    ],
+    "grader_verdicts_correct": 6,
+    "grader_verdicts_total": 6,
+    "all_current_hashes_match": true,
+    "all_grader_hashes_match": true,
+    "material_residuals": [],
+    "pass": true,
+    "claude_invoked": false,
+    "evidence_file": "probe-codex-results.json"
+  },
+  "tasks": [
+    {
+      "id": "A1",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "A2",
+      "framework": "LangChain",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "partial",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "codex_current_files_two_grader_consensus",
+      "first_after_key_deltas": [
+        "Read the system prompt via request.system_message (a SystemMessage object), NOT a request.system_prompt string attribute \u2014 there is no readable/writable system_prompt attribute on ModelRequest.",
+        "Rewrite the prompt with the immutable-style handler(request.override(system_message=SystemMessage(...))) pattern, not by in-place mutating request.system_prompt then calling handler(request).",
+        "Type the handler as Callable[[ModelRequest], ModelResponse]; the import `from langchain.agents.middleware.types import ModelCallHandler` is not a documented public symbol.",
+        "For prompt-only rewriting, the documented shortcut is the @dynamic_prompt decorator returning a str, or @wrap_model_call for the decorator form.",
+        "system_message is always a SystemMessage even when create_agent got a string system_prompt; use .content_blocks to manipulate content safely."
+      ],
+      "final_key_deltas": [
+        "Prefer @dynamic_prompt for pure state-dependent prompt rewriting.",
+        "For wrap_model_call, override system_message with a SystemMessage rather than using the deprecated ModelRequest.override(system_prompt=...) compatibility argument.",
+        "The create_agent(system_prompt=...) constructor parameter remains current and is not affected by the ModelRequest.override deprecation."
+      ]
+    },
+    {
+      "id": "A3",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "A4",
+      "framework": "LangChain",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "A5",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "A6",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "A7",
+      "framework": "LangChain",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "B1",
+      "framework": "LangGraph",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "B2",
+      "framework": "LangGraph",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "B3",
+      "framework": "LangGraph",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "B4",
+      "framework": "LangGraph",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "B5",
+      "framework": "LangGraph",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C1",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C2",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C3",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C4",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C5",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C6",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "partial",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "codex_current_files_two_grader_consensus",
+      "first_after_key_deltas": [
+        "Attach async subagents by passing AsyncSubAgent specs to create_deep_agent(subagents=[...]); create_deep_agent auto-adds AsyncSubAgentMiddleware \u2014 do NOT hand-build AsyncSubAgentMiddleware(subagents=...) and pass it via middleware=[...] (what the model did).",
+        "Import AsyncSubAgent / the spec from the top-level `deepagents` package (like `from deepagents import CompiledSubAgent`), not the guessed `deepagents.middleware.subagents` path the model invented.",
+        "Correct-as-is (no correction needed): the five tool names, AsyncSubAgent fields (name/description/graph_id), url/headers being optional, ASGI-co-deployed vs HTTP-remote transport, the `async_tasks` state channel, and preview status \u2014 the model already had these right."
+      ],
+      "repair_key_deltas": [
+        "AsyncSubAgent spec fields (name, description, graph_id, optional url/headers) match the doc's field table exactly",
+        "Async specs are passed via the same subagents= parameter as sync subagents (confirmed by context-engineering.mdx line 218)",
+        "AsyncSubAgentMiddleware is auto-attached only when async subagents are configured; do not build it manually (customization.mdx default stack #7)",
+        "The five tool names match verbatim: start_async_task, check_async_task, update_async_task, cancel_async_task, list_async_tasks",
+        "Steering = update_async_task, cancellation = cancel_async_task; parallelism from non-blocking start_async_task launches",
+        "Transport: omitted url => ASGI in-process/co-deployed, url => HTTP remote Agent Protocol server",
+        "system_prompt= and unnormalized future model id anthropic:claude-sonnet-4-6 are correct current idioms",
+        "Not noted (non-defects): preview/deepagents 0.5.0 status and langgraph.json graph registration requirement"
+      ]
+    },
+    {
+      "id": "C7",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C8",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "partial",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "codex_current_files_two_grader_consensus",
+      "first_after_key_deltas": [
+        "skills= takes top-level skill SOURCE directory paths that contain skill subdirectories (e.g. skills=[\"skills\"] for skills/pdf-fill/SKILL.md), NOT individual skill directory names like skills=[\"pdf-fill\"]; pointing skills= at an individual skill folder means the middleware finds no skill subdir and loads nothing",
+        "Frontmatter name must match the skill's parent directory name (name: pdf-fill lives in a directory named pdf-fill)",
+        "Everything else the model used was already correct and should be excluded: SkillsMiddleware auto-add, three-level progressive disclosure, FilesystemBackend(virtual_mode=True), create_file_data() from deepagents.backends.utils, StateBackend invoke(files={...}) requirement, content_blocks, not correcting the fictional model id anthropic:claude-sonnet-4-6"
+      ],
+      "repair_key_deltas": [
+        "Deep Agents skills are entirely post-cutoff: SKILL.md + Agent Skills spec frontmatter, SkillsMiddleware, progressive disclosure",
+        "skills= names the top-level CONTAINER/source directory relative to the backend root (skills=[\"skills\"]), NOT an individual skill dir; scanning is one level deep into each source's children",
+        "frontmatter name must equal the parent directory name",
+        "create_deep_agent uses system_prompt= (not instructions=) and provider:model ids like claude-sonnet-4-6 which must not be 'corrected'",
+        "FilesystemBackend needs virtual_mode=True; skills load relative to root_dir"
+      ]
+    },
+    {
+      "id": "C9",
+      "framework": "DeepAgents",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C10",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C11",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C12",
+      "framework": "DeepAgents",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C13",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "C14",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_0f3786fc-b2b",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R1",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R2",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R3",
+      "framework": "LangChain",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R4",
+      "framework": "LangChain",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R5",
+      "framework": "LangChain",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R6",
+      "framework": "LangChain",
+      "baseline_verdict": "unknown",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R7",
+      "framework": "LangGraph",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R8",
+      "framework": "LangGraph",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R9",
+      "framework": "LangGraph",
+      "baseline_verdict": "correct",
+      "baseline_include": false,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R10",
+      "framework": "DeepAgents",
+      "baseline_verdict": "outdated_confident",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R11",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    },
+    {
+      "id": "R12",
+      "framework": "DeepAgents",
+      "baseline_verdict": "partial",
+      "baseline_include": true,
+      "first_after_verdict": "correct",
+      "first_after_run": "wf_62c4ca76-463",
+      "final_observed_verdict": "correct",
+      "final_observation_method": "generated_files_original_grader"
+    }
+  ]
+}

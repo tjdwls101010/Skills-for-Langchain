@@ -17,7 +17,7 @@ Build a Claude Code **skill** at `.claude/skills/Langchain` that contains **only
 | D3 | Content boundary | **Delta + high-value gotchas** | Post-cutoff/new APIs + renamed/deprecated patterns + traps even a capable model gets wrong. Exclude anything Claude already does right. Best signal-to-token. |
 | D4 | Generated skill language | **English** (body, code, terms) | Matches API terminology, avoids translation drift, best for Claude's own parsing/triggering. (Interview conversation stays Korean.) |
 | D5 | Scope-setting method | **Empirical measurement, not self-report** | A model cannot reliably self-report what it doesn't know (it confidently believes wrong things). Evidence required. |
-| D6 | Evidence: axis 1 | **Doc novelty survey** (background subagent) | Doc-side view: "what is new/changed in the docs." Output → `scratchpad/novelty-catalog.md`. |
+| D6 | Evidence: axis 1 | **Doc novelty survey** (background subagent) | Doc-side view: "what is new/changed in the docs." Output → `research/novelty-catalog.md`. |
 | D7 | Evidence: axis 2 | **Blind knowledge probe**, ~24-30 tasks, DeepAgents-weighted | Model-side view: subagents (same Opus 4.8, no doc/web access) attempt tasks from internal knowledge; a doc-armed grader classifies each answer: correct(Claude knows→exclude) / outdated-confident(→highest value) / partial / unknown(→include). |
 | D8 | Include logic | **Cross the two axes** | new∧wrong → core of skill; new∧right → exclude (learned elsewhere); not-new∧wrong → sneaky gotcha (include). |
 | D9 | Probe reuse | **Doubles as before/after validation** | Same probe re-run with the skill loaded in the implementation session proves the delta closed: "N wrong without skill → 0 wrong with skill" is the success criterion. |
@@ -25,20 +25,20 @@ Build a Claude Code **skill** at `.claude/skills/Langchain` that contains **only
 
 ## Survey result (axis 1) — recorded
 
-Full catalog: `scratchpad/novelty-catalog.md` (219 lines). Headline: the **entire Deep Agents SDK** is post-cutoff (zero correct priors); **LangChain middleware** + **`create_agent` replacing `create_react_agent`** + the **runtime/context model** (`context=` not `config.configurable`, `ToolRuntime`) are the big CHANGED areas; **LangGraph is CHANGED-dominated** (core StateGraph is KNOWN — exclude). Two surprises folded into scope: **all model IDs in the docs are future/fictional** (must tell the model not to "correct" them), and the literal word **"workflow"** triggers dynamic subagents.
+Full catalog: `research/novelty-catalog.md` (219 lines). Headline: the **entire Deep Agents SDK** is post-cutoff (zero correct priors); **LangChain middleware** + **`create_agent` replacing `create_react_agent`** + the **runtime/context model** (`context=` not `config.configurable`, `ToolRuntime`) are the big CHANGED areas; **LangGraph is CHANGED-dominated** (core StateGraph is KNOWN — exclude). Two surprises folded into scope: **all model IDs in the docs are future/fictional** (must tell the model not to "correct" them), and the literal word **"workflow"** triggers dynamic subagents.
 
 Distilled volume estimate: **~18–30k tokens**, Deep-Agents-dominated (~15–20× compression off raw MDX).
 
 **Structure finding (proposed, confirm after probe):** split per-framework — `deepagents` / `langchain-middleware` / `langgraph` — plus a shared **idioms & import-map** file every branch links. Branching is clean (a task opens exactly one framework; Deep Agents uses the others as a black box). A monolith is wrong here. Deep Agents is the largest branch and may warrant subtopic sub-files. Secondary axis (python vs js) is moot given D1 (Python only).
 
-| D11 | Skill identity | **DeepAgents-centric + thin LC/LG deltas** | Probe evidence: Claude already writes modern LangChain-core + LangGraph-runtime correctly (7/26 "correct"). The real gap is DeepAgents (14 topics) + ~5 LC/LG deltas. One skill, not multiple (single trigger context). |
+| D11 | Skill identity | **DeepAgents-centric + thin LC/LG deltas** | Probe evidence after Codex re-audit: the consumer model already writes most modern LangChain-core + LangGraph-runtime code correctly (6/26 Round-1 exclusions). The real gap is DeepAgents plus a small set of LC/LG deltas. One skill, not multiple (single trigger context). |
 | D12 | Round-2 probe | **~12 targeted tasks on under-sampled areas** | Round-1 was thin on LangChain built-in middleware (only summarization probed), LangGraph persistence/durability deltas, and DeepAgents micro-features (rubric/dynamic-subagents/interpreters). Measure before finalizing include list. |
 
 ## Probe result (axis 2, round 1) — recorded
 
-Full evidence: `research/probe-results.md`. 26 blind tasks → doc-armed grading. **7 exclude** (create_agent, custom middleware, structured output, ToolRuntime, context API, LangGraph runtime context, functional API — Claude already correct), **19 include** (all 14 DeepAgents + A4, A7, B2, B3, B5). **Dominant cross-cutting gotcha:** `create_deep_agent(instructions=)` → `system_prompt=` (wrong in ~every DeepAgents task) — belongs in SKILL.md body. Plus: model IDs in docs are real/future (don't "correct"); pass `model=` explicitly.
+Full evidence: `research/probe-results.md`. The original Round-1 record was 7 exclude / 19 include, but final Codex review found that A2 used the deprecated `ModelRequest.override(system_prompt=...)` compatibility path. The corrected baseline is therefore **6 exclude** (A1, A3, A5, A6, B1, B4) and **20 include** (all 14 DeepAgents + A2, A4, A7, B2, B3, B5). **Dominant cross-cutting gotcha:** `create_deep_agent(instructions=)` → `system_prompt=` (wrong in ~every DeepAgents task) — belongs in SKILL.md body. Plus: model IDs in docs are real/future (don't "correct"); pass `model=` explicitly.
 
-| D13 | Skill file structure | **SKILL.md + 2 references** (`references/deepagents.md`, `references/langchain-langgraph.md`) | DeepAgents topics interrelate (one build task spans several) → keep together, cleanest routing. LC/LG deltas are thin (9 items) → one co-located file. Sub-split only if a file proves unwieldy at implementation time. |
+| D13 | Skill file structure | **SKILL.md + 2 references** (`references/deepagents.md`, `references/langchain-langgraph.md`) | DeepAgents topics interrelate (one build task spans several) → keep together, cleanest routing. LC/LG deltas are thin (10 items) → one co-located file. Sub-split only if a file proves unwieldy at implementation time. |
 | D14 | Plan format | **Multiple focused English docs in `docs/plans/`, authored directly (no subagents), no mid-sentence line wrapping** | User instruction. Overrides the ultracode "use workflows" default for the plan-writing step specifically. |
 
 ## Probe result (axis 2, round 2) — recorded
@@ -48,7 +48,7 @@ Full evidence appended to `research/probe-results.md`. 12 targeted tasks → 5 e
 ## Final include list (measured)
 
 Cross-cutting (SKILL.md body): `system_prompt=` not `instructions=`; model IDs are real/future; explicit `model=`; `create_agent` baseline.
-LangChain (5): A4, A7, R3, R4, R6. LangGraph (4): B5, B3, B2, R8. DeepAgents (16): C1–C14, R10, R11, R12.
+LangChain (6): A2, A4, A7, R3, R4, R6. LangGraph (4): B5, B3, B2, R8. DeepAgents (16 content topics): C1/C2 combined, C3–C14, R10, R11, R12; these correspond to 17 included probe tasks.
 
 ## Open decisions — all resolved
 
