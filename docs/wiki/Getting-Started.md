@@ -12,7 +12,7 @@ The repository root is the marketplace root. The distributable plugin lives unde
 
 ## Prerequisites
 
-- A current Claude Code release with plugin support. The v1.0.0 manifest was validated with Claude Code 2.1.207.
+- A current Claude Code release with plugin support. The v1.1.0 manifest was validated with Claude Code 2.1.211.
 - Git access to GitHub.
 - A trusted environment. Claude Code plugins are high-trust extensions even when, like this one, they contain only knowledge files.
 
@@ -41,10 +41,10 @@ The primary installation path uses the GitHub repository shorthand. Do not add t
 
 ## Pin to a stable release
 
-To pin the marketplace checkout to v1.0.0:
+To pin the marketplace checkout to v1.1.0:
 
 ```bash
-claude plugin marketplace add tjdwls101010/Skills-for-Langchain@v1.0.0
+claude plugin marketplace add tjdwls101010/Skills-for-Langchain@v1.1.0
 claude plugin install skills-for-langchain@skills-for-langchain
 ```
 
@@ -83,7 +83,7 @@ Restart Claude Code after an update. Published releases use explicit SemVer, so 
 
 ## Move a pinned installation to a newer release
 
-A marketplace added with `@v1.0.0` stays pinned to that tag. Ordinary marketplace and plugin update commands cannot move it to a different tag. Remove the pinned marketplace, add the desired release ref, and reinstall:
+A marketplace added with `@v1.1.0` stays pinned to that tag. Ordinary marketplace and plugin update commands cannot move it to a different tag. Remove the pinned marketplace, add the desired release ref, and reinstall:
 
 ```bash
 claude plugin marketplace remove skills-for-langchain

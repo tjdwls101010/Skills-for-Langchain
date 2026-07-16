@@ -3,10 +3,11 @@
   "recorded_on": "2026-07-12",
   "method": "codex_subagent_cross_review",
   "generated_file_sha256": {
-    ".claude/skills/langchain/SKILL.md": "d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd",
+    ".claude/skills/langchain/SKILL.md": "60fdcd62d4f03f26e7bf604594db9492bb7d3bd19990ee77919d0dd77b42074a",
     ".claude/skills/langchain/references/deepagents.md": "138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043",
     ".claude/skills/langchain/references/langchain-langgraph.md": "c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca"
   },
+  "generated_file_sha256_note": "SKILL.md was re-stamped on 2026-07-16 for the v1.1.0 consultant enhancement, which prepended consultant persona/branch/checklist content NOT covered by these v1.0.0 probes. The two reference files are byte-unchanged, and the residual verdicts below depend only on those references (A2 -> langchain-langgraph.md c7d08f..., C6/C8 -> deepagents.md 138faf...). The per-attempt skill_sha256 values below intentionally retain the v1.0.0 SKILL.md hash d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd because those Codex attempts genuinely ran against the v1.0.0 SKILL.md.",
   "attempts": [
     {
       "id": "A2",
@@ -219,7 +220,7 @@
     "all_current_hashes_match": true,
     "all_grader_hashes_match": true,
     "pass": true,
-    "rationale": "All v1.0.0 release-candidate attempts embed the current lowercase-path generated SKILL.md hash d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd and the applicable current reference hash: c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca for A2, and 138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043 for C6 and C8. Every alpha and beta grader attempt_sha256 exactly matches its task attempt file, and each task has two independently labeled correct verdicts. Alpha's A2 and C6 key_deltas are confirmations and a preview-version caveat rather than corrections; beta reports no key deltas. C8's graders differ only on inclusion value, not API correctness. No material residual remains."
+    "rationale": "All v1.0.0 release-candidate attempts embed the v1.0.0 release-candidate SKILL.md hash d22966e34f1e5ac767e181722e90287f48df8c8afa1d1523f861a470f0da9ecd and the applicable current reference hash: c7d08fc8793c429480f4dc59b72f2aff3024023cc69160c694ea75fd32282aca for A2, and 138faf079c9bd397b5cb61f1ae7ff18815f23c463c38aa829e8fa902b65b4043 for C6 and C8. Every alpha and beta grader attempt_sha256 exactly matches its task attempt file, and each task has two independently labeled correct verdicts. Alpha's A2 and C6 key_deltas are confirmations and a preview-version caveat rather than corrections; beta reports no key deltas. C8's graders differ only on inclusion value, not API correctness. No material residual remains."
   },
   "repair_iteration": {
     "summary": "The initial A2 Codex attempt exposed deprecated ModelRequest.override(system_prompt=...), so the reference and baseline were corrected. The final API review then corrected MCP stateful-session guidance, deployment CLI and branding guidance, and the LangGraph error-handler version gate. Public plugin identifiers were subsequently normalized. After all repairs, the full Codex-only residual gate was rerun against the current canonical lowercase-path generated-file hashes.",

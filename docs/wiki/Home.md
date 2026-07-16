@@ -16,6 +16,6 @@ The plugin tries to be small where the model is already right and precise where 
 
 ## Important boundary
 
-v1.0.0 is Python-only and verified against an official-documentation snapshot drafted around April 2026. It contains preview and version-gated APIs and is not a substitute for checking the package version installed in your environment.
+v1.1.0 is Python-only and verified against an official-documentation snapshot drafted around April 2026. It contains preview and version-gated APIs and is not a substitute for checking the package version installed in your environment.
 
 Return to the [repository README](../../README.md) or browse the [wiki source map](README.md).

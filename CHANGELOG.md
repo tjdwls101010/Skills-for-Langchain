@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-16
+
+### Added
+
+- Consultant behavior on the `langchain` skill: on an abstract agent-building goal ("build an agent that…", "automate this…", "answer from these docs"), the skill now leads an interview, proposes a concrete current-API architecture, and — only after explicit agreement and an agreed build scope — implements it.
+- New `references/consultant.md`: the interview protocol (divergent-open, convergent AskUserQuestion), the ten-dimension checklist expanded as principles, the agreement-gate build rules, and one worked example.
+- Broadened skill `description` so a natural-language goal (no framework named, no code shown) triggers the skill, while preserving the CrewAI/AutoGen/LlamaIndex/raw-SDK near-miss boundary.
+
+### Preserved
+
+- The deltas-only behavior is unchanged: editing or reviewing existing LangChain-ecosystem code still gets silent current-API corrections with no interview.
+- The two delta references (`deepagents.md`, `langchain-langgraph.md`) are byte-unchanged; the v1.0.0 probe-measured knowledge is intact.
+
 ## [1.0.0] - 2026-07-12
 
 ### Added

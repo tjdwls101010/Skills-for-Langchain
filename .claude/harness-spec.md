@@ -59,6 +59,12 @@ The existing 65-line `CLAUDE.md` contains general engineering guidance. No user-
 | B33 | Prefer `@dynamic_prompt` for state-dependent prompt rewriting and use `system_message` rather than the deprecated `ModelRequest.override(system_prompt=...)` compatibility path. | skill | `.claude/skills/langchain/references/langchain-langgraph.md` | validated |
 | B34 | Publish a byte-verified release copy of the canonical project skill through a strict Claude Code plugin manifest with SemVer metadata. | plugin | `plugins/skills-for-langchain/` | validated |
 | B35 | Expose the repository as an installable same-repository Claude Code marketplace using stable public identifiers. | marketplace | `.claude-plugin/marketplace.json` | validated |
+| B36 | Enter consultant mode on an abstract agent-building goal (outcome/automation/answer-from-data), even with no framework named and no code shown, and interview before proposing. | skill | `.claude/skills/langchain/SKILL.md` + `references/consultant.md` | validated |
+| B37 | Preserve the deltas-only behavior: existing LangChain-ecosystem code work still gets silent current-API correction with no interview (no v1.0.0 regression). | skill | `.claude/skills/langchain/SKILL.md` | validated |
+| B38 | Broaden the trigger to natural-language goals while keeping the CrewAI/AutoGen/LlamaIndex/raw-SDK near-miss boundary explicit. | skill | `.claude/skills/langchain/SKILL.md` description | validated |
+| B39 | Supply a thin ten-dimension checklist of what to ask about (each naming the decision it drives), not a goal-to-architecture decision tree. | skill | `.claude/skills/langchain/SKILL.md` + `references/consultant.md` | validated |
+| B40 | Enforce the agreement gate: design is always free, implementation waits for an explicit go-ahead, and build scope (code-only vs runnable scaffold vs full project) is agreed per case. | skill | `.claude/skills/langchain/references/consultant.md` | validated |
+| B41 | Require reading the delta references before proposing or coding so proposals reflect the current API, not pre-cutoff reflexes. | skill | `.claude/skills/langchain/SKILL.md` + `references/consultant.md` | validated |
 
 ## Component specs
 
@@ -66,9 +72,16 @@ The existing 65-line `CLAUDE.md` contains general engineering guidance. No user-
 
 - Frontmatter name: `langchain`.
 - Invocation contract: `/langchain` standalone and `/skills-for-langchain:langchain` when installed from the marketplace, derived from the directory name.
-- Description: deliberately broad positive triggers for LangChain, LangGraph, and Deep Agents Python work; explicit near-miss boundary for CrewAI, AutoGen, LlamaIndex, and raw OpenAI or Anthropic SDK usage unless bridged through LangChain.
-- Invocation policy: model-invocable and user-invocable; no `disable-model-invocation`, `allowed-tools`, hooks, or forked context.
-- Body: a short three-layer mental model, the cross-cutting corrections B3-B5, exact routing to the two real reference files, the measured exclusion reminder, and the point-in-time maintenance note.
+- Description: consultant clause first (design/build an agent, automate a task, answer from data — even with no framework named and no code shown), then the deltas triggers for LangChain, LangGraph, and Deep Agents Python work; explicit near-miss boundary for CrewAI, AutoGen, LlamaIndex, and raw OpenAI or Anthropic SDK usage unless bridged through LangChain. Broadened for v1.1.0 (B36/B38) without disabling model invocation.
+- Invocation policy: model-invocable and user-invocable; no `disable-model-invocation`, `allowed-tools`, hooks, or forked context. The consultant is an interactive main-thread conversation, and pre-approving Write/Edit would surprise users during a design-only conversation (the agreement gate, B40, governs when files are written).
+- Body: the consultant gist first (identity, the consult-vs-deltas branch B37, the compact persona, the thin ten-dimension checklist B39, the reference-usage rule B41), then the preserved deltas-only content — the three-layer mental model, the cross-cutting corrections B3-B5, exact routing to all three reference files (including `references/consultant.md`), the measured exclusion reminder, and the point-in-time maintenance note. The added gist is kept within the ~40-70 line budget so the always-loaded deltas path does not bloat (consultant DC8).
+
+### `.claude/skills/langchain/references/consultant.md`
+
+- Read only on the consult path (progressive disclosure per consultant DC8): the interview walkthrough, the ten-dimension checklist expanded as principles, the build rules, and one worked example — none of it needed on the deltas-only path, which is why it lives here rather than in the always-loaded SKILL.md.
+- Consulting process and posture only; it re-teaches no LangChain API (consultant DC4). Each dimension points at the delta reference that carries its current-API answer rather than restating the API here.
+- Contents in order: the persona (full), the interview protocol (divergent-open / convergent-AskUserQuestion, plus the every-question-must-move-the-design test), the expanded dimension checklist, the agreement-gate build rules, and one worked example dialogue.
+- Not covered by the v1.0.0 probe suite; consult quality is judgment, validated by behavioral dry-run rather than a probe flip-rate (consultant DC10).
 
 ### `.claude/skills/langchain/references/deepagents.md`
 
@@ -96,7 +109,8 @@ The existing 65-line `CLAUDE.md` contains general engineering guidance. No user-
 - Stable plugin name: `skills-for-langchain`; display name: `Skills for LangChain`.
 - Explicit SemVer is the release cache key and must be bumped with every published release.
 - The plugin root is `plugins/skills-for-langchain/`, isolating the package from project-only `CLAUDE.md` and other harness files so direct strict validation passes.
-- The packaged `skills/langchain/` files mirror the canonical `.claude/skills/langchain/` files, and `scripts/validate_evidence.py` enforces byte equality.
+- The packaged `skills/langchain/` files mirror the canonical `.claude/skills/langchain/` files, verified byte-for-byte with `diff -rq` on every skill edit (consultant DC9). As of v1.1.0 the mirror includes `references/consultant.md`; `scripts/validate_evidence.py` pins the original three files' hashes, and the full-tree `diff -rq` covers the new reference.
+- The explicit SemVer bump for a user-facing capability is at least a minor version: v1.1.0 added the consultant behavior over the unchanged v1.0.0 knowledge base.
 - Metadata links to the public repository, MIT license, and maintainer identity.
 
 ### `.claude-plugin/marketplace.json`
@@ -122,6 +136,8 @@ Two references follow genuine invocation branches. Deep Agents work needs its in
 The content boundary is empirical. Topics graded correct in the 38 blind probes remain excluded even when the docs label them novel, because re-teaching already-correct knowledge dilutes the corrections and can cause regressions. The highest-value content is either confidently outdated, unknown, or partial in a way that produces broken or unsafe code.
 
 Advisory knowledge belongs in a skill, not in hooks or permissions. The task requires better judgment when an ecosystem request appears, not deterministic interception of a tool call or path.
+
+The v1.1.0 consultant is a second *behavior* over the same one skill and the same shared knowledge, not a second skill (consultant DC1). Two skills would duplicate the knowledge or spend competing description budget; one auto-triggering skill that branches in its body keeps the deltas-only path intact (DC2) while letting a natural-language goal enter consultant mode (DC3). The consultant's content is deliberately process, not more knowledge (DC4): a capable model already designs conceptually sound architectures, and the gap it has — the current API at implementation time — is already closed by the two frozen delta references, so the consultant adds only a persona, a thin dimension checklist (DC5), and the discipline to read those references before proposing (B41). The interview walkthrough and worked example split into `references/consultant.md` because they are needed only inside a consult, never on the always-loaded deltas path (DC8). The agreement gate (DC6) mirrors the hard side-effect boundary of harness authoring: design always, implement only on an explicit go-ahead, scope agreed per case. Validation is honestly lighter than v1.0.0's probe suite because consult quality is a judgment call, not a mechanically gradable fact (DC10).
 
 ## Validation
 
@@ -162,6 +178,16 @@ Advisory knowledge belongs in a skill, not in hooks or permissions. The task req
 - Isolated local smoke test: marketplace add, plugin install, plugin list, and plugin details all passed; Claude Code reported version 1.0.0, one `langchain` skill, and no agents, hooks, MCP servers, or LSP servers.
 - `python3 scripts/validate_evidence.py`: PASS with 38 tasks, 27 includes, 11 exclusions, matching generated-file hashes, and matching v1.0.0 release metadata.
 
+### v1.1.0 consultant validation (2026-07-16)
+
+- `validate_harness.py --path .`: PASS, 0 errors / 0 warnings, after the consultant edit and all spec/pointer updates.
+- `validate_evidence.py`: PASS at v1.1.0. The `SKILL.md` generated-file hash was re-stamped (`60fdcd6…`) with a documented note; the two delta references' pinned hashes and the historical per-attempt hashes are unchanged, and the residual grading verdicts (which depend only on those references) are untouched.
+- Plugin mirror: `diff -rq .claude/skills/langchain plugins/skills-for-langchain/skills/langchain` clean, now including `references/consultant.md`.
+- Regression guard: `git diff HEAD` shows `deepagents.md` and `langchain-langgraph.md` byte-unchanged, so the v1.0.0 deltas-only behavior is structurally intact.
+- Strict manifest validation on Claude Code 2.1.211: `claude plugin validate` passed for both `plugins/skills-for-langchain/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
+- Tier-3 behavioral dry-run (a dynamic workflow of five isolated headless scenarios graded with cited transcript evidence; consult quality is a judgment call, honestly weaker than the v1.0.0 probe suite per DC10). All five passed: V1 support-email agent (English) entered consultant mode, read `references/consultant.md`, asked six scoping questions, and held the agreement gate (no Write/Edit) with current APIs and no stale reflexes; V2 the same goal in Korean did the same entirely in Korean and deferred the proposal until answers; V3 a `create_react_agent(instructions=…)` review applied the deltas-only corrections (`create_agent`, already-compiled, `system_prompt=`, explicit `provider:model`) with no interview launched; V4 "build an agent with CrewAI" correctly did not invoke the skill (`skill_invocations: []`) and wrote genuine CrewAI with no LangChain machinery; V5 "summarize one file once" answered that an agent is the wrong tool and recommended a plain script rather than over-engineering. Caveat honestly recorded: a full multi-turn interview cannot be exercised headless because `AskUserQuestion` is unavailable there, so the dry-run validates entry, posture, reference-reading, and the agreement gate — not interview depth, which remains a manual dogfood.
+- Headless permission mechanism: confirmed working in this project on this run — `run_e2e.py` with `--isolate` spawned authenticated `claude -p` sessions that completed with sensible transcripts (`terminal_reason: completed`, `error: null`). The prior documented caveat that this was an unverified best guess is now resolved for this project.
+
 ### Optional paid e2e
 
 - With explicit user consent only, run two to four isolated headless scenarios covering a positive Deep Agents trigger, a positive LangChain or LangGraph trigger, and an unrelated-framework near miss.
@@ -177,3 +203,4 @@ Advisory knowledge belongs in a skill, not in hooks or permissions. The task req
 - 2026-07-12 — final independent Codex reviews found four version/branding precision issues and two plan-count/status inconsistencies. Corrected them, reran structural validation and the complete current-hash residual gate, obtained 6/6 independent `correct` verdicts again, and marked B1–B33 `validated`.
 - 2026-07-12 — normalized the skill identifier to lowercase for public plugin compatibility and added a dedicated strict-validating Claude plugin plus same-repository marketplace manifest for the v1.0.0 release.
 - 2026-07-12 — added public README/wiki and standard open-source governance files, regenerated current-hash residual evidence after identifier normalization, passed strict plugin/harness/evidence validation, and completed an isolated install/details smoke test; marked B34–B35 `validated`.
+- 2026-07-16 — extend pass (consultant enhancement, plan in `docs/plans/consultant/`, DC1–DC10). Added the consultant behavior over the existing skill: broadened the `SKILL.md` description (consultant clause first, near-miss boundary kept), prepended a compact consultant gist (consult-vs-deltas branch, persona, thin ten-dimension checklist, reference-usage rule) while preserving the deltas-only content verbatim, and authored the new `references/consultant.md` (interview protocol, expanded checklist, agreement-gate build rules, one worked example). Added behavior rows B36–B41. The two delta references are byte-unchanged, so the v1.0.0 probe-measured knowledge is intact. Re-synced the plugin mirror byte-for-byte (`diff -rq` clean, now including `consultant.md`). Re-stamped the `SKILL.md` generated-file hash in `probe-codex-results.json` with an explicit note that the consultant content is not probe-covered and the per-attempt historical hashes are intentionally unchanged. Bumped the release to v1.1.0 (plugin.json, CHANGELOG, `docs/releases/v1.1.0.md`, README/wiki version references); strict plugin and marketplace validation passed on Claude Code 2.1.211. `validate_harness.py` and `validate_evidence.py` both pass.

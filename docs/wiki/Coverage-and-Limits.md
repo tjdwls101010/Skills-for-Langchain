@@ -58,7 +58,7 @@ The regression guard covers 11 areas that the baseline model already handled cor
 ## Limits
 
 - **Python only.** JavaScript and TypeScript APIs are outside the measured scope.
-- **Point-in-time.** v1.0.0 is verified against an April-2026 documentation snapshot.
+- **Point-in-time.** v1.1.0 is verified against an April-2026 documentation snapshot.
 - **Version-sensitive.** Several topics require particular package versions or preview access.
 - **Not a package manager.** The plugin does not install or pin Python dependencies.
 - **Not a runtime sandbox.** Advice about backends and permissions does not enforce isolation.

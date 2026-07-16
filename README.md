@@ -18,7 +18,7 @@
 LangChain's agent ecosystem moves quickly. A capable model can still produce code that looks convincing while using renamed parameters, retired constructors, guessed imports, or incomplete safety boundaries. Skills for LangChain gives Claude Code a compact, version-stamped correction layer built from measured failures instead of a generic documentation dump.
 
 > [!IMPORTANT]
-> The knowledge in v1.0.0 was verified against an official-documentation snapshot drafted around April 2026. It is Python-only and includes preview or version-gated APIs. For releases substantially newer than the snapshot, verify version-sensitive details against the current official docs.
+> The knowledge in v1.1.0 was verified against an official-documentation snapshot drafted around April 2026. It is Python-only and includes preview or version-gated APIs. For releases substantially newer than the snapshot, verify version-sensitive details against the current official docs.
 
 ## Why this project exists
 
@@ -68,7 +68,7 @@ The skill is model-invocable, so normal LangChain, LangGraph, or Deep Agents tas
 ### Pin the marketplace to a release
 
 ```bash
-claude plugin marketplace add tjdwls101010/Skills-for-Langchain@v1.0.0
+claude plugin marketplace add tjdwls101010/Skills-for-Langchain@v1.1.0
 claude plugin install skills-for-langchain@skills-for-langchain
 ```
 

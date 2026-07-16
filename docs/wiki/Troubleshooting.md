@@ -8,7 +8,7 @@ Update Claude Code, restart it, and check the version:
 claude --version
 ```
 
-The v1.0.0 marketplace was validated with Claude Code 2.1.207. Older versions may not support current relative-path marketplace plugins or newer manifest fields.
+The v1.1.0 marketplace was validated with Claude Code 2.1.211. Older versions may not support current relative-path marketplace plugins or newer manifest fields.
 
 ## Marketplace validation fails
 
