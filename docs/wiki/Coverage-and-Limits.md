@@ -4,6 +4,8 @@
 
 Coverage is evidence-selected rather than documentation-complete. A topic is included when the official docs show a meaningful current pattern and blind probes show that the model is partial, unknown, or confidently outdated.
 
+The tables below describe the **knowledge** coverage. The consultant behavior (added in v1.1.0) is a separate axis: it is process and posture — an interview protocol and a dimension checklist — not additional measured knowledge, and it draws on exactly the same delta references listed here. Its scope is therefore not a probe-measured content boundary; see [Validation and Evidence](Validation-and-Evidence.md) for how it is validated instead.
+
 ## LangChain: 6 deltas
 
 | Topic | Main correction |

@@ -6,7 +6,7 @@ Three terms are involved:
 
 - **Marketplace:** a catalog that tells Claude Code where this plugin lives.
 - **Plugin:** the distributable package named `skills-for-langchain`.
-- **Skill:** the background knowledge unit named `langchain`, invoked as `/skills-for-langchain:langchain` after marketplace installation.
+- **Skill:** the unit named `langchain`, invoked as `/skills-for-langchain:langchain` after marketplace installation. It both consults on building agents from a goal and supplies current-API corrections on existing code.
 
 The repository root is the marketplace root. The distributable plugin lives under `plugins/skills-for-langchain/`, while `.claude/skills/langchain/` remains the canonical project-harness source. Release validation enforces byte-for-byte equality between the canonical and packaged skill files.
 
@@ -69,6 +69,14 @@ Build a Deep Agent with two asynchronous specialists and show how the coordinato
 ```
 
 A current answer should use `AsyncSubAgent` specifications through `create_deep_agent(subagents=[...])`, automatic async-subagent middleware, and the current task lifecycle tools rather than hand-rolled `asyncio` orchestration.
+
+To verify the consultant path instead, state a goal with no code:
+
+```text
+I want to build an agent that answers customer questions from our PDF manuals.
+```
+
+It should interview you about the design before proposing anything and should not write code until you agree — not jump straight to an implementation.
 
 ## Update an unpinned installation
 

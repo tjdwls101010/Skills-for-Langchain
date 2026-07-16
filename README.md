@@ -5,7 +5,7 @@
 <h1 align="center">Skills for LangChain</h1>
 
 <p align="center">
-  An evidence-built Claude Code plugin for current LangChain, LangGraph, and Deep Agents Python development.
+  An evidence-built Claude Code plugin that consults on building agents with LangChain, LangGraph, and Deep Agents — and keeps the Python on current APIs.
 </p>
 
 <p align="center">
@@ -16,6 +16,13 @@
 </p>
 
 LangChain's agent ecosystem moves quickly. A capable model can still produce code that looks convincing while using renamed parameters, retired constructors, guessed imports, or incomplete safety boundaries. Skills for LangChain gives Claude Code a compact, version-stamped correction layer built from measured failures instead of a generic documentation dump.
+
+The plugin has **two behaviors over one shared knowledge base**:
+
+- **Solutions consultant.** Describe an outcome — "build an agent that triages my support inbox", "automate this weekly report", "answer questions from these PDFs" — even with no framework named and no code shown, and Claude interviews you, proposes a concrete architecture grounded in the *current* API, and builds it only after you agree on the shape and scope.
+- **Current-API guide.** When you are writing or reviewing existing LangChain-ecosystem code, the same skill silently supplies the measured post-cutoff corrections with no interview.
+
+The consultant does not sell LangChain regardless of fit: when an agent is overkill or a different tool suits better, it says so.
 
 > [!IMPORTANT]
 > The knowledge in v1.1.0 was verified against an official-documentation snapshot drafted around April 2026. It is Python-only and includes preview or version-gated APIs. For releases substantially newer than the snapshot, verify version-sensitive details against the current official docs.
@@ -63,7 +70,7 @@ Restart Claude Code or run `/reload-plugins`, then invoke the skill explicitly i
 /skills-for-langchain:langchain
 ```
 
-The skill is model-invocable, so normal LangChain, LangGraph, or Deep Agents tasks can trigger it automatically.
+The skill is model-invocable, so both a natural-language agent-building goal and a normal LangChain, LangGraph, or Deep Agents coding task can trigger it automatically — the first enters the consultant, the second gets silent current-API guidance.
 
 ### Pin the marketplace to a release
 
@@ -88,7 +95,17 @@ Detailed installation, update, and removal instructions are in [Getting Started]
 
 ## Use it
 
-Ask Claude Code the way you normally would. Examples:
+Ask Claude Code the way you normally would.
+
+**Start from a goal, and it consults.** Describe the outcome and let it interview you before proposing:
+
+```text
+I want to build an agent that reads our incoming support emails and drafts replies.
+```
+
+It asks the questions that actually change the design (where the emails live, draft vs. send, per-customer memory, human review), then proposes a concrete current-API architecture and builds it only once you agree on the scope.
+
+**Or hand it a concrete task, and it guides the code.** Examples:
 
 ```text
 Build a Deep Agent with user-isolated long-term memory and a safely rooted filesystem.
@@ -111,11 +128,11 @@ The plugin supplies API corrections and architectural guardrails; it does not in
 ## How it works
 
 ```text
-ecosystem task
+request
   → skill description matches
-  → short SKILL.md supplies cross-cutting corrections
-  → task-shaped reference is loaded
-  → Claude writes or reviews code with current delta knowledge
+  → short SKILL.md decides the branch:
+      • agent-building goal → read consultant.md → interview → propose → build on agreement
+      • existing code       → apply cross-cutting corrections → read the task-shaped delta reference
 ```
 
 The implementation uses progressive disclosure:
@@ -124,11 +141,12 @@ The implementation uses progressive disclosure:
 .claude/skills/langchain/
 ├── SKILL.md
 └── references/
-    ├── deepagents.md
-    └── langchain-langgraph.md
+    ├── consultant.md          # read on the consult path: interview, checklist, build rules
+    ├── deepagents.md          # current-API deltas
+    └── langchain-langgraph.md # current-API deltas
 ```
 
-`SKILL.md` stays short because it loads whenever the skill triggers. The two references hold the detailed, source-cited corrections and are read only when relevant. The public plugin lives under `plugins/skills-for-langchain/`; release validation requires its packaged skill bytes to match the canonical project skill exactly.
+`SKILL.md` stays short because it loads whenever the skill triggers; it carries a compact consultant gist and the highest-frequency corrections. The three references hold the depth — `consultant.md` the interview process, the other two the source-cited API deltas — and are read only when the relevant path is taken. The public plugin lives under `plugins/skills-for-langchain/`; release validation requires its packaged skill bytes to match the canonical project skill exactly.
 
 Read [How It Works](docs/wiki/How-It-Works.md) for the design rationale.
 
@@ -141,7 +159,7 @@ The validation record is intentionally layered and should not be read as one ide
 - The three residuals were repaired and rechecked with current-file Codex attempts, two independent official-doc graders per task, and a separate hash/consensus synthesis.
 - Final recorded state: 27/27 included probe tasks correct and 11/11 exclusions preserved.
 - Harness validation passed with zero errors and zero warnings in normal and strict modes.
-- Headless E2E was explicitly skipped; it is not claimed as release evidence.
+- The v1.1.0 consultant behavior is validated by a five-scenario headless behavioral dry-run (consult EN+KO, deltas-only, near-miss, honest-fit), not by the probe suite — consult quality is a judgment call, honestly a lighter bar than "is this API current." The knowledge evidence below is unchanged: the two delta references are byte-identical to v1.0.0.
 
 Raw prompts, verdicts, hashes, and synthesis records live under [docs/plans/research](docs/plans/research/). The complete methodology is explained in [Validation and Evidence](docs/wiki/Validation-and-Evidence.md).
 

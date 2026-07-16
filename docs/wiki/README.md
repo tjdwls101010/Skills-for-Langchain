@@ -25,9 +25,9 @@ This directory is the canonical source for the project's long-form documentation
 ## Pages
 
 - [Getting Started](Getting-Started.md) — installation, updates, removal, and the first verification prompt.
-- [Use Cases](Use-Cases.md) — practical prompt recipes and what the skill contributes.
+- [Use Cases](Use-Cases.md) — consulting from a goal plus practical current-API prompt recipes.
 - [Coverage and Limits](Coverage-and-Limits.md) — the measured knowledge boundary and explicit non-goals.
-- [How It Works](How-It-Works.md) — plugin structure, automatic triggering, and progressive disclosure.
+- [How It Works](How-It-Works.md) — plugin structure, the consult-vs-deltas branch, automatic triggering, and progressive disclosure.
 - [Customization](Customization.md) — adapting a fork without turning it into an unmaintainable encyclopedia.
 - [Validation and Evidence](Validation-and-Evidence.md) — novelty survey, blind probes, after-runs, and evidence tiers.
 - [Maintenance and Release](Maintenance-and-Release.md) — refresh and SemVer release procedures.

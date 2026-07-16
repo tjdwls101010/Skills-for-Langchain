@@ -1,6 +1,6 @@
 # How It Works
 
-## One plugin, one skill, two reference branches
+## One plugin, one skill, three reference branches
 
 The repository root is the marketplace root. The distributable plugin has its own strict-validating directory, while the project harness remains canonical:
 
@@ -11,8 +11,9 @@ The repository root is the marketplace root. The distributable plugin has its ow
 .claude/skills/langchain/
 ├── SKILL.md
 └── references/
-    ├── deepagents.md
-    └── langchain-langgraph.md
+    ├── consultant.md          # interview process (consult path)
+    ├── deepagents.md          # current-API deltas
+    └── langchain-langgraph.md # current-API deltas
 
 plugins/skills-for-langchain/
 ├── .claude-plugin/plugin.json
@@ -21,13 +22,15 @@ plugins/skills-for-langchain/
     └── references/...
 ```
 
-The marketplace entry uses `source: "./plugins/skills-for-langchain"`. Installing from the GitHub marketplace copies only that plugin directory into Claude Code's versioned cache. `scripts/validate_evidence.py` requires the three packaged skill files to be byte-identical to the canonical `.claude/skills/langchain/` files.
+The marketplace entry uses `source: "./plugins/skills-for-langchain"`. Installing from the GitHub marketplace copies only that plugin directory into Claude Code's versioned cache. `scripts/validate_evidence.py` pins the byte hashes of the three probe-measured skill files (`SKILL.md` and the two delta references), and the full `diff -rq` on every skill edit keeps all packaged files — including `consultant.md` — byte-identical to the canonical `.claude/skills/langchain/` files.
 
-## Automatic triggering
+## Automatic triggering and the consult-vs-deltas branch
 
-Claude Code compares the user's task with the skill description. The description deliberately names imports, constructors, and architectural areas so that a request can trigger even when the user does not mention a version.
+Claude Code compares the user's request with the skill description. The description deliberately names both the consultant intent (design or build an agent, automate a multi-step task, build an assistant, answer from data — even with no framework named and no code shown) and the code-work surface (imports, constructors, architectural areas), so a request triggers whether it is a goal or a coding task.
 
-The boundary also names nearby frameworks that should not trigger the skill: CrewAI, AutoGen, LlamaIndex, and raw provider SDK work unless bridged through LangChain.
+Once loaded, the `SKILL.md` body decides which behavior to run. An outcome-shaped request — especially with no existing code and no framework named — enters the consultant: read `consultant.md` and interview. A request that writes, edits, or reviews existing LangChain-ecosystem code takes the deltas-only path: no interview, just the corrections and the relevant delta reference. Genuine ambiguity gets a single clarifying question, not a full interview.
+
+The boundary also names nearby frameworks that should not trigger the skill: CrewAI, AutoGen, LlamaIndex, and raw provider SDK work unless bridged through LangChain. A framework-agnostic "build me an agent" legitimately loads this skill — it is the LangChain consultant — and part of that role is saying honestly when LangChain is not the right fit.
 
 Users can always force-load the skill with:
 
@@ -37,14 +40,15 @@ Users can always force-load the skill with:
 
 ## Progressive disclosure
 
-`SKILL.md` contains only:
+`SKILL.md` loads whenever the skill triggers, so it holds only what both paths need up front:
 
+- The consult-vs-deltas branch, a compact consultant gist (persona, the thin ten-dimension checklist, the reference-usage rule).
 - A three-layer mental model: LangChain as framework, LangGraph as runtime, Deep Agents as harness.
 - Corrections that matter across many tasks.
-- Routing instructions for the two references.
+- Routing instructions for the three references.
 - A point-in-time verification warning.
 
-Detailed content lives in references. A Deep Agents task reads the Deep Agents branch; a LangChain or LangGraph task reads the thinner shared branch. A task spanning both can read both.
+Detailed content lives in references. The consult path reads `consultant.md` (the interview walkthrough, the expanded checklist, the build rules, one worked example) plus the relevant delta reference (`deepagents.md` and/or `langchain-langgraph.md`) before it proposes an architecture and again before it writes code — all only when consulting, and never paid on the deltas-only path. On the deltas-only path a Deep Agents task reads the Deep Agents branch; a LangChain or LangGraph task reads the thinner shared branch; a task spanning both can read both.
 
 This shape keeps the always-loaded context small while preserving enough explanation for the model to generalize beyond copied examples.
 

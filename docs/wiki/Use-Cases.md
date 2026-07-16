@@ -1,6 +1,14 @@
 # Use Cases
 
-The plugin is most useful when an apparently ordinary task crosses a recent API boundary. The prompts below are recipes, not fixed commands; adapt them to your application.
+The plugin helps two ways: start from a goal and it consults, or hand it a concrete task and it guides the code. The consult case comes first because it is the headline capability; the rest are current-API recipes. All prompts are starting points, not fixed commands; adapt them to your application.
+
+## 0. Consult from a goal
+
+```text
+I want to build an agent that reads our incoming support emails and drafts replies.
+```
+
+You do not need to name a framework or show any code. The skill enters consultant mode: it opens in plain conversation to understand the outcome and constraints (where the emails live, draft vs. send, per-customer memory, escalation, volume, human review), then converges with focused questions over its dimension checklist. It puts a concrete architecture on the table — naming the current LangChain / LangGraph / Deep Agents pieces and why each is there — invites pushback, and writes nothing until you say to build and agree on the scope (just the agent code, a runnable scaffold, or a full project). This gate is designed behavior the model follows, not a hard-enforced block (see [Troubleshooting](Troubleshooting.md) if it gets ahead of itself). If an agent is overkill for what you described, it tells you that instead of selling one.
 
 ## 1. Build a Deep Agent safely
 

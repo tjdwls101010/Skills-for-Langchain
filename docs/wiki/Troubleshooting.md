@@ -41,9 +41,13 @@ Do not add the raw `marketplace.json` URL. The catalog's relative `./plugins/ski
 
 ## The skill does not trigger automatically
 
-Try explicit invocation first. If explicit invocation works, the task may not match the skill description. Include the actual framework or constructor in the prompt, such as `deepagents`, `create_deep_agent`, `LangGraph`, or `create_agent`.
+Try explicit invocation first. If explicit invocation works, the request may not match the skill description. For a code task, include the actual framework or constructor in the prompt, such as `deepagents`, `create_deep_agent`, `LangGraph`, or `create_agent`. For the consultant path, state the outcome as an agent-building goal ("build an agent that…", "automate…", "answer from these docs") rather than an open-ended question — the description triggers on goals, but a vague prompt with no build intent may not match.
 
 Do not force the skill on unrelated raw provider SDK, CrewAI, AutoGen, or LlamaIndex tasks unless they are explicitly bridged through LangChain.
+
+## The consultant writes code before I agree, or does not interview
+
+Consultant behavior is advisory, not enforced — the skill leads Claude to interview and gate on agreement, but it is guidance a model follows, not a hard block. If it jumps ahead, say so ("interview me first" / "don't write anything yet"). If it never enters consultant mode on a genuine agent-building goal, invoke `/skills-for-langchain:langchain` explicitly and restate the goal.
 
 ## An old answer persists after updating
 

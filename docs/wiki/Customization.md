@@ -61,6 +61,6 @@ Do not add bare replacement tables without the reason. The explanation is what l
 
 ## Keep one source of truth
 
-Edit the canonical `.claude/skills/langchain/` files first, then mirror them into `plugins/skills-for-langchain/skills/langchain/`. The release validator compares all three files byte-for-byte; do not make independent edits that allow the project harness and installed plugin to diverge.
+Edit the canonical `.claude/skills/langchain/` files first, then mirror them into `plugins/skills-for-langchain/skills/langchain/`. `validate_evidence.py` pins the byte hashes of the three probe-measured files (`SKILL.md` and the two delta references), and a full `diff -rq` must show the whole skill directory — including `references/consultant.md` — identical between the two locations; do not make independent edits that allow the project harness and installed plugin to diverge.
 
 Run [the validation workflow](Validation-and-Evidence.md) after every customization.

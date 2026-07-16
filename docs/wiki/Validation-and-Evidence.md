@@ -59,10 +59,20 @@ git diff --check
 
 The harness was also checked with the harness-creator normal and strict validators and audited for drift, dead links, hook issues, and user-scope conflicts.
 
+## Validating the consultant behavior (v1.1.0)
+
+The consultant added in v1.1.0 is validated differently from the knowledge, and honestly on a lighter bar. "Is this API current" is a mechanically gradable fact; "did it consult well" is a judgment. So the consultant has no probe flip-rate. Instead:
+
+- **Mechanical gates**, identical to the knowledge release: `validate_harness.py` and `validate_evidence.py` pass, the plugin mirror is byte-identical (`diff -rq`), and the two delta references are byte-unchanged from v1.0.0, so the knowledge evidence above is untouched.
+- **A five-scenario headless behavioral dry-run**, graded with cited transcript evidence: a consult goal in English and in Korean (each must enter consultant mode, read the references, hold the agreement gate before writing anything, and use current APIs), an existing-code review (must correct without launching an interview), a CrewAI near-miss (must not drive the answer), and an overkill prompt (must say an agent is the wrong tool rather than over-engineer). All five passed.
+
+Honest caveat: a full multi-turn interview cannot be exercised headless because `AskUserQuestion` is unavailable there, so the dry-run validates entry, posture, reference-reading, and the agreement gate — not interview depth, which remains a manual review. The dry-run is a qualitative check a human reads, not a pass/fail metric on par with the probe suite.
+
 ## What is not claimed
 
 - The evidence is not one identical-protocol 38/38 run.
-- Headless E2E was skipped and is not release evidence.
+- The knowledge probes did not use headless E2E; the v1.1.0 consultant dry-run did, but it validates behavior entry and posture, not a graded knowledge flip.
+- Consult quality is a judgment call, not a measured number.
 - The probes do not prove performance for every model, prompt, package version, or application domain.
 - Passing a code-generation probe does not prove runtime correctness, security, or production fitness.
 
