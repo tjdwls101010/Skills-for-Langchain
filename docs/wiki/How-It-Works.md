@@ -1,6 +1,6 @@
 # How It Works
 
-## One plugin, one skill, three reference branches
+## One plugin, one skill, a searchable docs DB
 
 The repository root is the marketplace root. The distributable plugin has its own strict-validating directory, while the project harness remains canonical:
 
@@ -11,9 +11,8 @@ The repository root is the marketplace root. The distributable plugin has its ow
 .claude/skills/langchain/
 ├── SKILL.md
 └── references/
-    ├── consultant.md          # interview process (consult path)
-    ├── deepagents.md          # current-API deltas
-    └── langchain-langgraph.md # current-API deltas
+    ├── consultant.md        # interview process (consult path)
+    └── docs_official.db      # SQLite + FTS5: full official docs, snippets inlined
 
 plugins/skills-for-langchain/
 ├── .claude-plugin/plugin.json
@@ -22,13 +21,13 @@ plugins/skills-for-langchain/
     └── references/...
 ```
 
-The marketplace entry uses `source: "./plugins/skills-for-langchain"`. Installing from the GitHub marketplace copies only that plugin directory into Claude Code's versioned cache. `scripts/validate_evidence.py` pins the byte hashes of the three probe-measured skill files (`SKILL.md` and the two delta references), and the full `diff -rq` on every skill edit keeps all packaged files — including `consultant.md` — byte-identical to the canonical `.claude/skills/langchain/` files.
+The marketplace entry uses `source: "./plugins/skills-for-langchain"`. Installing from the GitHub marketplace copies only that plugin directory into Claude Code's versioned cache. `scripts/validate_evidence.py` checks the SemVer/CHANGELOG coupling and that the full `diff -rq` on every skill edit keeps all packaged files — including `consultant.md` and the committed `docs_official.db` — byte-identical to the canonical `.claude/skills/langchain/` files.
 
 ## Automatic triggering and the consult-vs-deltas branch
 
 Claude Code compares the user's request with the skill description. The description deliberately names both the consultant intent (design or build an agent, automate a multi-step task, build an assistant, answer from data — even with no framework named and no code shown) and the code-work surface (imports, constructors, architectural areas), so a request triggers whether it is a goal or a coding task.
 
-Once loaded, the `SKILL.md` body decides which behavior to run. An outcome-shaped request — especially with no existing code and no framework named — enters the consultant: read `consultant.md` and interview. A request that writes, edits, or reviews existing LangChain-ecosystem code takes the deltas-only path: no interview, just the corrections and the relevant delta reference. Genuine ambiguity gets a single clarifying question, not a full interview.
+Once loaded, the `SKILL.md` body decides which behavior to run. An outcome-shaped request — especially with no existing code and no framework named — enters the consultant: read `consultant.md` and interview. A request that writes, edits, or reviews existing LangChain-ecosystem code takes the current-API path: no interview, just querying `docs_official.db` for the APIs in play and applying the gotchas. Genuine ambiguity gets a single clarifying question, not a full interview.
 
 The boundary also names nearby frameworks that should not trigger the skill: CrewAI, AutoGen, LlamaIndex, and raw provider SDK work unless bridged through LangChain. A framework-agnostic "build me an agent" legitimately loads this skill — it is the LangChain consultant — and part of that role is saying honestly when LangChain is not the right fit.
 
@@ -42,13 +41,13 @@ Users can always force-load the skill with:
 
 `SKILL.md` loads whenever the skill triggers, so it holds only what both paths need up front:
 
-- The consult-vs-deltas branch, a compact consultant gist (persona, the thin ten-dimension checklist, the reference-usage rule).
+- The consult-vs-current-API branch, a compact consultant gist (persona, the thin ten-dimension checklist, the query-the-DB rule).
 - A three-layer mental model: LangChain as framework, LangGraph as runtime, Deep Agents as harness.
-- Corrections that matter across many tasks.
-- Routing instructions for the three references.
+- A forcing function ("you don't reliably know the current API — query the DB first") and a compact gotchas list for removed/renamed APIs the DB can't surface.
+- The DB schema with example FTS5 queries.
 - A point-in-time verification warning.
 
-Detailed content lives in references. The consult path reads `consultant.md` (the interview walkthrough, the expanded checklist, the build rules, one worked example) plus the relevant delta reference (`deepagents.md` and/or `langchain-langgraph.md`) before it proposes an architecture and again before it writes code — all only when consulting, and never paid on the deltas-only path. On the deltas-only path a Deep Agents task reads the Deep Agents branch; a LangChain or LangGraph task reads the thinner shared branch; a task spanning both can read both.
+Detailed content lives in the DB and in `consultant.md`. The consult path reads `consultant.md` (the interview walkthrough, the expanded checklist, the build rules, one worked example) and queries `docs_official.db` for the APIs involved before it proposes an architecture and again before it writes code. On the current-API path, editing or reviewing code queries the DB directly — FTS-search for the concept, read the matching doc bodies in full (code snippets are inlined), build against what was read — with no interview paid.
 
 This shape keeps the always-loaded context small while preserving enough explanation for the model to generalize beyond copied examples.
 

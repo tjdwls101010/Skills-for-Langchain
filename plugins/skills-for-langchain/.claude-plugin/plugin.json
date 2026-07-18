@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "skills-for-langchain",
   "displayName": "Skills for LangChain",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Evidence-built Python API guidance for LangChain 1.x, LangGraph 1.x, and the Deep Agents SDK.",
   "author": {
     "name": "Seongjin (tjdwls101010)",

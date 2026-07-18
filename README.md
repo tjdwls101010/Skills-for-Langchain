@@ -25,7 +25,7 @@ The plugin has **two behaviors over one shared knowledge base**:
 The consultant does not sell LangChain regardless of fit: when an agent is overkill or a different tool suits better, it says so.
 
 > [!IMPORTANT]
-> The knowledge in v1.1.0 was verified against an official-documentation snapshot drafted around April 2026. It is Python-only and includes preview or version-gated APIs. For releases substantially newer than the snapshot, verify version-sensitive details against the current official docs.
+> As of v1.2.0 the shared knowledge base is a searchable database of the current official docs (`references/docs_official.db`) that Claude queries before proposing or writing ecosystem code. It is a version-stamped snapshot (Python-only, includes preview or version-gated APIs); check `SELECT value FROM meta WHERE key='snapshot_date'` for its date and verify anything newer against the current official docs.
 
 ## Why this project exists
 
@@ -132,7 +132,7 @@ request
   → skill description matches
   → short SKILL.md decides the branch:
       • agent-building goal → read consultant.md → interview → propose → build on agreement
-      • existing code       → apply cross-cutting corrections → read the task-shaped delta reference
+      • existing code       → query docs_official.db for the APIs in play → apply gotchas
 ```
 
 The implementation uses progressive disclosure:
@@ -141,12 +141,11 @@ The implementation uses progressive disclosure:
 .claude/skills/langchain/
 ├── SKILL.md
 └── references/
-    ├── consultant.md          # read on the consult path: interview, checklist, build rules
-    ├── deepagents.md          # current-API deltas
-    └── langchain-langgraph.md # current-API deltas
+    ├── consultant.md        # read on the consult path: interview, checklist, build rules
+    └── docs_official.db      # SQLite + FTS5: full body of the ~187 core docs, snippets inlined
 ```
 
-`SKILL.md` stays short because it loads whenever the skill triggers; it carries a compact consultant gist and the highest-frequency corrections. The three references hold the depth — `consultant.md` the interview process, the other two the source-cited API deltas — and are read only when the relevant path is taken. The public plugin lives under `plugins/skills-for-langchain/`; release validation requires its packaged skill bytes to match the canonical project skill exactly.
+`SKILL.md` stays short because it loads whenever the skill triggers; it carries the consultant gist, a forcing function ("you don't reliably know the current API — query the DB first"), a compact list of removed/renamed-API gotchas the DB can't surface, and the DB schema with example queries. The depth lives in the DB, which Claude searches with SQL, and in `consultant.md` for the interview process. The DB is rebuilt from `langchain-ai/docs` by `scripts/build_docs_db.py`. The public plugin lives under `plugins/skills-for-langchain/`; release validation requires its packaged skill bytes — including the `.db` — to match the canonical project skill exactly.
 
 Read [How It Works](docs/wiki/How-It-Works.md) for the design rationale.
 
@@ -159,7 +158,9 @@ The validation record is intentionally layered and should not be read as one ide
 - The three residuals were repaired and rechecked with current-file Codex attempts, two independent official-doc graders per task, and a separate hash/consensus synthesis.
 - Final recorded state: 27/27 included probe tasks correct and 11/11 exclusions preserved.
 - Harness validation passed with zero errors and zero warnings in normal and strict modes.
-- The v1.1.0 consultant behavior is validated by a five-scenario headless behavioral dry-run (consult EN+KO, deltas-only, near-miss, honest-fit), not by the probe suite — consult quality is a judgment call, honestly a lighter bar than "is this API current." The knowledge evidence below is unchanged: the two delta references are byte-identical to v1.0.0.
+- The v1.1.0 consultant behavior is validated by a five-scenario headless behavioral dry-run (consult EN+KO, deltas-only, near-miss, honest-fit), not by the probe suite — consult quality is a judgment call, honestly a lighter bar than "is this API current."
+
+The probe record above is the historical basis for the correction knowledge. **v1.2.0** changed the knowledge substrate: the two hand-distilled delta references were replaced by `references/docs_official.db`, a searchable snapshot of the full official docs (with code snippets inlined) that Claude queries with SQL. The DB build is validated separately by `scripts/validate_docs_db.py` (schema, row counts, zero unresolved snippets, snippet-inlining regression, FTS hits); the residue that a search over current docs can't surface — removed and renamed APIs — survives as a compact gotchas list in `SKILL.md`.
 
 Raw prompts, verdicts, hashes, and synthesis records live under [docs/plans/research](docs/plans/research/). The complete methodology is explained in [Validation and Evidence](docs/wiki/Validation-and-Evidence.md).
 

@@ -1,6 +1,9 @@
 # Maintenance and Release
 
-## Refreshing the knowledge baseline
+> [!NOTE]
+> As of **v1.2.0** the knowledge substrate is `references/docs_official.db`, and refreshing it no longer involves probes or manual re-curation: re-clone `langchain-ai/docs`, run `scripts/build_docs_db.py`, run `scripts/validate_docs_db.py`, then bump the version and mirror. See `SKILL.md` → "Staying current" and [docs/plans/docs-db/](../plans/docs-db/) for the current procedure. The probe-based process below is the historical v1.0.0/v1.1.0 method, retained for provenance.
+
+## Refreshing the knowledge baseline (historical, pre-v1.2.0)
 
 1. Fetch a new official Python documentation snapshot for LangChain, LangGraph, and Deep Agents.
 2. Record source provenance, file count, byte count, and an aggregate digest.
