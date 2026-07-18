@@ -12,7 +12,7 @@ Ordered, verifiable steps for the implementation session. Each step names its ve
 ## Phase B — Build & validate the DB
 4. Build: `python scripts/build_docs_db.py --src .tmp/docs_langchain --out .claude/skills/langchain/references/docs_official.db`.
    → verify: exits 0; report shows ≈187 rows, per-package counts, snippet substitutions > 0, changelog rows > 0.
-5. Regression check (the whole point): 
+5. Regression check (the whole point):
    ```bash
    sqlite3 -readonly .claude/skills/langchain/references/docs_official.db \
      "SELECT substr(body,1,4000) FROM docs WHERE path LIKE '%dynamic-subagents%';"
