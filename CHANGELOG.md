@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-18
+
+### Changed
+
+- The `langchain` skill's knowledge substrate is now a searchable database of the current official docs (`references/docs_official.db`) that Claude queries with SQL before proposing or writing any ecosystem code — replacing the two hand-distilled delta references. The DB holds the full body of the ~187 core docs (LangChain, LangGraph, Deep Agents, concepts, reference, migrate, releases) with every `/snippets/...` code sample inlined, so nothing is pre-dropped by distillation. This fixes the measured failure where distillation silently lost content (e.g. `deepagents/dynamic-subagents.mdx`'s orchestration code samples).
+- `SKILL.md` rewritten: a forcing function ("you do not reliably know the current API — query the DB first"), a compact gotchas list for removed/renamed APIs the DB structurally cannot surface, the DB schema with worked FTS5 queries, and a one-command DB-refresh workflow.
+- `references/consultant.md` re-pointed from the delta files to the DB; the interview protocol, ten dimensions, build rules, and worked example are otherwise unchanged.
+
+### Added
+
+- `scripts/build_docs_db.py` (stdlib-only): clones/reads `langchain-ai/docs`, selects the core corpus, recursively inlines snippet imports, strips JS-only `:::js` conditionals, parses the changelog, and writes `docs_official.db` with an FTS5 index and a provenance `meta` stamp.
+- `scripts/validate_docs_db.py`: lightweight artifact validation (schema, row-count band, zero unresolved snippets, snippet-inlining regression, FTS hits, meta populated).
+
+### Removed
+
+- `references/deepagents.md` and `references/langchain-langgraph.md` — the two delta references, superseded by the DB.
+- The deltas-only justification in `scripts/validate_evidence.py` (SKILL.md hash pin); it now checks only SemVer/CHANGELOG coupling and plugin-mirror byte-identity. The historical probe records under `docs/plans/research/` are preserved untouched.
+
 ## [1.1.0] - 2026-07-16
 
 ### Added

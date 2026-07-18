@@ -68,4 +68,4 @@ The regression guard covers 11 areas that the baseline model already handled cor
 - **Not model-universal.** The probe conclusions apply to a specific measured model and task set.
 - **Independent project.** This repository is not affiliated with or endorsed by LangChain or Anthropic.
 
-Canonical content lives in [the LangChain/LangGraph reference](../../.claude/skills/langchain/references/langchain-langgraph.md) and [the Deep Agents reference](../../.claude/skills/langchain/references/deepagents.md).
+As of v1.2.0, canonical content lives in [the docs database](../../.claude/skills/langchain/references/docs_official.db) — a searchable snapshot of the full official docs with code snippets inlined — which the skill queries with SQL (see `SKILL.md` for the schema and example queries).
