@@ -1,25 +1,48 @@
 # Support
 
-## Usage questions
+## Start here
 
-Start with the [Getting Started guide](docs/wiki/Getting-Started.md), [Use Cases](docs/wiki/Use-Cases.md), and [Troubleshooting](docs/wiki/Troubleshooting.md).
+Most questions are answered in the wiki:
 
-If the question is not answered there, open a [GitHub issue](https://github.com/tjdwls101010/Skills-for-Langchain/issues/new/choose) with:
+- [Getting Started](docs/wiki/Getting-Started.md) — installing, pinning, updating, removing.
+- [Use Cases](docs/wiki/Use-Cases.md) — what to actually ask for, with prompts that work.
+- [Troubleshooting](docs/wiki/Troubleshooting.md) — the skill not triggering, database failures, stale answers.
 
-- Your Claude Code version.
-- The plugin version.
-- Relevant Python package versions.
-- The prompt or task shape, with private data removed.
-- Expected and observed behavior.
+## The first thing to check
 
-## Bugs and feature requests
+Two facts explain a large share of "the plugin gave me a wrong answer" reports. Collect both before filing anything:
 
-Use the issue forms for reproducible bugs and focused feature requests. General LangChain application debugging is outside this project's support scope unless the problem is caused by guidance shipped in this plugin.
+```bash
+# 1. Is the skill actually querying the database, or answering from memory?
+#    Watch for a sqlite3 command in the transcript before Claude writes code.
 
-## Security reports
+# 2. How old is the database you are running against?
+sqlite3 -readonly .claude/skills/langchain/references/docs_official.db \
+  "SELECT value FROM meta WHERE key='snapshot_date';"
+```
 
-Do not report vulnerabilities in a public support issue. Follow [SECURITY.md](SECURITY.md).
+If no query ran, the skill did not load — that is a triggering problem, and [Troubleshooting](docs/wiki/Troubleshooting.md) covers it. If a query ran but the answer is stale, compare the snapshot date against when the API you expected was released; the plugin does not know about anything published after that date.
+
+## Asking a question
+
+Open a [GitHub issue](https://github.com/tjdwls101010/Skills-for-Langchain/issues/new/choose) with:
+
+- Your Claude Code version and the installed plugin version.
+- The database `snapshot_date` from the query above.
+- Relevant Python package versions (`langchain`, `langgraph`, `deepagents`).
+- The prompt you gave, with private data removed.
+- What you expected and what you got.
+
+## What is in scope
+
+**In scope:** the plugin failing to trigger, the database being missing or unreadable, guidance that is outdated or wrong against current official documentation, the consultant skipping its interview or writing files before you agreed, installation and update problems.
+
+**Out of scope:** general LangChain application debugging, questions about your own agent's business logic, and issues in LangChain, LangGraph, or Deep Agents themselves — those belong in their own repositories. The exception is when the problem traces back to guidance this plugin shipped, which makes it ours.
+
+## Security
+
+Do not report a vulnerability, or unsafe generated guidance, in a public issue. Follow [SECURITY.md](SECURITY.md).
 
 ## No service-level agreement
 
-This is a community-maintained open-source project. Support is provided on a best-effort basis, and response times are not guaranteed.
+This is a community-maintained project with a single maintainer. Support is best-effort and response times are not guaranteed. If something is blocking you and you have a fix, a pull request will always move faster than an issue — see [CONTRIBUTING.md](CONTRIBUTING.md).

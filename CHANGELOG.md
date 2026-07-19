@@ -61,5 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Version-sensitive knowledge is verified against an April-2026 official-documentation snapshot.
 - Headless E2E was skipped and is not claimed as v1.0.0 evidence.
 
-[Unreleased]: https://github.com/tjdwls101010/Skills-for-Langchain/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/tjdwls101010/Skills-for-Langchain/compare/v1.1.0...HEAD
+[1.2.0]: https://github.com/tjdwls101010/Skills-for-Langchain/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/tjdwls101010/Skills-for-Langchain/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/tjdwls101010/Skills-for-Langchain/releases/tag/v1.0.0

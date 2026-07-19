@@ -1,66 +1,147 @@
 # Customization
 
-Forking the project is encouraged when your organization has a different package baseline, model profile, or engineering policy. Preserve the measured-delta discipline while adapting it.
+Adapting a fork to your organization. Read [How It Works](How-It-Works.md) and [The Knowledge Base](The-Knowledge-Base.md) first — the customization surfaces map directly onto that architecture.
 
-## Change the trigger boundary
+## Where the levers are
 
-Edit the `description` frontmatter in `.claude/skills/langchain/SKILL.md` when your fork should trigger on additional imports, constructors, or intents.
+There are four places worth changing, and one that is almost never the answer.
 
-Good additions are concrete and discoverable:
+| Lever | File | Change it when |
+|---|---|---|
+| **Corpus selection** | `scripts/build_docs_db.py` | You need documentation the shipped database excludes, or want it smaller. |
+| **The gotchas list** | `.claude/skills/langchain/SKILL.md` | Your team hits a removed or renamed API the list misses. |
+| **The trigger boundary** | `SKILL.md` frontmatter `description` | The skill should load on your internal packages, or should stop over-triggering. |
+| **Organization policy** | A new reference file | You have rules that are yours, not upstream's. |
+| ~~Hand-written API prose~~ | — | Almost never. See below. |
 
-- A new top-level package import.
-- A new constructor that replaces an old one.
-- A task category with repeated version-sensitive failures.
+## Corpus selection — the main lever
 
-Avoid vague phrases such as “all AI work.” Broad descriptions steal unrelated tasks and spend context without providing relevant corrections.
+The most likely thing you want is different documentation. That is one list in `scripts/build_docs_db.py`:
 
-## Add organization-specific conventions
-
-Prefer a separate, clearly labeled section or reference for organization policy. Distinguish policy from upstream API fact:
-
-```text
-Upstream API: what the official package supports.
-Organization policy: what this team chooses to require.
+```python
+INCLUDE = [
+    ("langchain", "langchain"),
+    ("langgraph", "langgraph"),
+    ("deepagents", "deepagents"),
+    ("concepts", "concepts"),
+    ("reference", "reference"),
+    ("python/migrate", "migrate"),
+    ("python/releases", "releases"),
+]
 ```
 
-Examples include approved model providers, minimum package versions, deployment boundaries, logging rules, or mandatory sandbox providers.
+Each tuple is `(directory under src/oss, package label)`, recursed for `.mdx` files.
 
-## Add a new reference branch
+**To add the integrations catalog** — 579 files on providers, vector stores, and connectors, excluded from the shipped build for size:
 
-Add a reference only when a real invocation branch would avoid loading a large amount of unrelated material. A branch is justified when:
+```python
+    ("python/integrations", "integrations"),
+```
 
-- It has a distinct task trigger.
-- It is large enough to bury cross-cutting corrections.
-- Typical users need it independently of the existing branches.
+Expect the database to grow several times over. Also raise the sanity band in both `build_docs_db.py` and `scripts/validate_docs_db.py`, which currently assert a document count between 150 and 250 — a check that exists to catch a glob matching nothing or everything, and that will now fire on a legitimate build.
 
-Update the routing section in `SKILL.md`, the plugin documentation, and the harness spec together.
+**To trim it**, drop entries you do not use. A team that never touches Deep Agents can remove that line and cut the database roughly in half.
 
-## Change the package baseline
+**Do not add the JavaScript directories.** The exclusion is not about size. A Python-only skill whose database contains JavaScript can retrieve JavaScript and present it as Python, and no amount of prompt wording reliably prevents that. If you want JavaScript coverage, build a separate database and a separate skill.
 
-If your project is pinned to older package versions, do not overwrite the current guidance with ambiguous statements. Add explicit version gates or maintain a release branch whose verification stamp matches your environment.
+After any corpus change:
 
-For a newer baseline:
+```bash
+python3 scripts/build_docs_db.py --src .tmp/docs_langchain --out <your-db-path>
+python3 scripts/validate_docs_db.py --db <your-db-path>
+```
 
-1. Capture the official docs and package versions.
-2. Re-run the novelty survey.
-3. Re-run blind probes rather than assuming every documentation change is a model gap.
-4. Update only the deltas that changed.
-5. Preserve old evidence as historical evidence.
+## The gotchas list
 
-## Keep corrections reason-first
+The gotchas exist for one reason: a search over current documentation cannot reveal what was **removed**. Adding to that list is justified when — and only when — all three hold:
 
-A durable correction states:
+1. Your team's model reaches for something that no longer exists, or has been renamed.
+2. The database structurally cannot correct it, because the removed thing has no current page to find.
+3. You can show it is genuinely gone, not merely undocumented.
 
-- The plausible wrong prior.
-- The current API.
-- Why the distinction matters.
-- The version or exception boundary.
-- The official source.
+Anything that fails the second test belongs in the corpus, not the list. If the model gets something wrong and the correct answer *is* in the official docs, the fix is a better search or a fresher snapshot — not another line of prose that will silently rot.
 
-Do not add bare replacement tables without the reason. The explanation is what lets an agent handle adjacent cases that were not in the original probe.
+Keep the list short. It loads on every single trigger, including one-line corrections, and every line spends context that the code path pays for.
 
-## Keep one source of truth
+## The trigger boundary
 
-Edit the canonical `.claude/skills/langchain/` files first, then mirror them into `plugins/skills-for-langchain/skills/langchain/`. `validate_evidence.py` checks the SemVer/CHANGELOG coupling and that a full `diff -rq` shows the whole skill directory — including `references/consultant.md` and the committed `docs_official.db` — identical between the two locations; do not make independent edits that allow the project harness and installed plugin to diverge.
+The `description` frontmatter in `SKILL.md` is what Claude Code matches against a request. Widen it for concrete, discoverable things:
 
-Run [the validation workflow](Validation-and-Evidence.md) after every customization.
+- An internal wrapper package your team imports instead of `langchain` directly.
+- A constructor your codebase standardized on.
+- A recurring task category that keeps producing version-sensitive failures.
+
+Avoid vague widening — "all AI work," "anything about agents." A description that broad steals unrelated tasks and spends context on requests it cannot help with.
+
+Narrowing is legitimate too. The shipped description over-triggers on purpose, because a missed load means confidently deprecated code. If your team finds that trade wrong for them, tighten it — but understand what you are trading away.
+
+## Organization policy
+
+Keep your rules separate from upstream fact, in their own reference file, and label the distinction explicitly:
+
+```text
+Upstream API   — what the official package supports.
+Our policy     — what this team requires.
+```
+
+Policy that belongs here: approved model providers, minimum package versions, mandatory sandbox providers, logging and audit requirements, deployment boundaries, which APIs are banned regardless of what the docs say.
+
+Do not fold policy into the gotchas list. Gotchas are claims about the world that anyone can verify; policy is a choice your organization made. Merging them makes both harder to maintain, and makes it impossible to tell which lines survive a database refresh.
+
+Point `SKILL.md` at the new file with a one-line pointer describing when to read it.
+
+## Why hand-written API prose is the wrong answer
+
+The strongest temptation when forking is to write down what your team keeps getting wrong. Resist it.
+
+That is exactly what v1.0.0 did, and it failed in a specific, non-obvious way: distillation drops content silently. A 369-line official page on subagent orchestration was compressed to a single heading and lost ten working code samples, and nothing about the process ever flagged it — because a summary that loses content looks identical to one that does not.
+
+If the answer is in the official docs, it is already in the database. If it is *not* in the database, the fix is corpus selection or a refresh. The only durable exception is the removed-API case above, and that one exists because of a structural property of search rather than a preference.
+
+## Changing the package baseline
+
+If you are pinned to older packages, do not blur the shipped guidance into version-ambiguous statements. Either add explicit version gates in your policy reference, or build your database from an older documentation commit:
+
+```bash
+git clone https://github.com/langchain-ai/docs .tmp/docs_langchain
+git -C .tmp/docs_langchain checkout <the commit matching your baseline>
+python3 scripts/build_docs_db.py --src .tmp/docs_langchain --out <your-db-path>
+```
+
+The build stamps that commit into `meta.source_commit`, so your fork's database says which baseline it represents. That is the whole point of the stamp.
+
+## The rule you cannot skip
+
+Whatever you change, the two skill trees must stay byte-identical:
+
+```bash
+diff -rq .claude/skills/langchain plugins/skills-for-langchain/skills/langchain
+```
+
+`scripts/validate_evidence.py` enforces this by SHA-256 across every file, including the database. `build_docs_db.py` has a `--mirror` flag so a rebuild can write both copies in one pass:
+
+```bash
+python3 scripts/build_docs_db.py \
+  --src .tmp/docs_langchain \
+  --out .claude/skills/langchain/references/docs_official.db \
+  --mirror plugins/skills-for-langchain/skills/langchain/references/docs_official.db
+```
+
+If you publish your fork, also change the plugin and marketplace `name` fields so your build does not collide with this one in a user's Claude Code installation.
+
+## After any customization
+
+```bash
+python3 scripts/validate_docs_db.py
+python3 scripts/validate_evidence.py
+claude plugin validate .claude-plugin/marketplace.json --strict
+claude plugin validate plugins/skills-for-langchain/.claude-plugin/plugin.json --strict
+```
+
+Then test it for real, in a session started outside the repository, and confirm the skill actually queries your database — see [Getting Started](Getting-Started.md).
+
+---
+
+**Next:** [Maintenance and Release](Maintenance-and-Release.md) for the refresh procedure, or [Validation and Evidence](Validation-and-Evidence.md) for what the checks prove.
+
+Back to the [documentation index](README.md).
